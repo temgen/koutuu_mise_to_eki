@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>こうつうで くらしが かわる！</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#eef6ff;color:#17324d}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.screen{display:none;width:100%;height:100%;position:relative}
+.screen.active{display:flex}
+.topbar{
+  position:absolute;left:0;top:0;width:100%;height:64px;background:#fff;
+  display:flex;align-items:center;justify-content:space-between;padding:8px 14px;
+  box-shadow:0 3px 12px #0002;z-index:30
+}
+.topbar .title{font-size:clamp(21px,2.4vw,32px);font-weight:900}
+.smallbtn{
+  border:0;border-radius:14px;padding:10px 16px;background:#244b75;color:white;
+  font-weight:900;font-size:18px
+}
+.bigbtn{
+  border:0;border-radius:26px;box-shadow:0 8px 0 #0002,0 12px 25px #0002;
+  font-weight:900
+}
+.overlay{
+  position:absolute;inset:0;background:#10243dcc;z-index:100;display:none;
+  align-items:center;justify-content:center;padding:24px
+}
+.overlay.show{display:flex}
+.dialog{
+  width:min(760px,92vw);background:#fff;border-radius:30px;padding:28px;text-align:center;
+  box-shadow:0 18px 60px #0005
+}
+.dialog h2{font-size:clamp(28px,4vw,48px);margin:4px 0 14px}
+.dialog p{font-size:clamp(19px,2.4vw,28px);font-weight:800;line-height:1.5}
+.dialog .go{margin-top:18px;padding:15px 28px;font-size:25px;background:#ffd84a;color:#17324d}
+
+/* MENU */
+#menu{align-items:center;justify-content:center;background:linear-gradient(#dff3ff,#fff4cf)}
+.menuWrap{width:min(1050px,94vw);text-align:center}
+.menuTitle{font-size:clamp(34px,5vw,62px);font-weight:1000;margin-bottom:12px}
+.menuSub{font-size:clamp(19px,2.6vw,30px);font-weight:900;margin-bottom:28px}
+.menuCards{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.menuCard{
+  min-height:320px;background:white;padding:26px;border:5px solid #fff;border-radius:34px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center
+}
+.menuCard:nth-child(1){background:#fff4d4}
+.menuCard:nth-child(2){background:#e6f8e8}
+.menuCard .icons{font-size:clamp(56px,8vw,100px);line-height:1;margin-bottom:14px}
+.menuCard .name{font-size:clamp(30px,4.2vw,50px);font-weight:1000}
+.menuCard .desc{font-size:clamp(18px,2.2vw,27px);font-weight:800;margin-top:12px;line-height:1.45}
+
+/* GAME 1 */
+#g1{background:#eaf6ff;padding-top:64px}
+.g1Body{display:grid;grid-template-columns:62% 38%;width:100%;height:100%}
+.mapPane{position:relative;overflow:hidden;background:linear-gradient(#bfe8ff,#eaf8ff);border-right:5px solid #86b9d6}
+.mapTitle{
+ position:absolute;left:14px;top:12px;background:#ffffffeb;border-radius:16px;padding:8px 13px;
+ font-weight:1000;font-size:19px;z-index:25;box-shadow:0 3px 10px #0002
+}
+.japanMap{position:absolute;left:1%;top:1%;width:98%;height:96%;z-index:1;object-fit:fill;filter:drop-shadow(0 7px 10px #0002);pointer-events:none}
+.region{
+ position:absolute;transform:translate(-50%,-50%);width:92px;min-height:76px;border:4px solid #ffffff;border-radius:20px;
+ background:#fff;box-shadow:0 5px 0 #0002,0 7px 16px #0002;z-index:12;padding:5px 4px
+}
+.region .place{display:block;font-size:14px;font-weight:1000;white-space:nowrap}
+.region .product{display:block;font-size:37px;line-height:1}
+.region.available{animation:pulse 1s infinite}
+.region.slowMoving{opacity:.45}
+.region.full{opacity:.35;filter:grayscale(.6);animation:none}
+@keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.06);box-shadow:0 0 0 7px #ffe56eaa,0 5px 0 #0002}}
+.fastNet{display:none;position:absolute;inset:0;z-index:4;pointer-events:none}
+.fastNet.show{display:block}
+.fastNet svg{position:absolute;inset:0;width:100%;height:100%}
+.fastRoute{fill:none;stroke:#ffcf36;stroke-width:8;stroke-linecap:round;stroke-dasharray:14 10;animation:dash .45s linear infinite;filter:drop-shadow(0 0 4px #fff)}
+.fastRoute.road{stroke:#ff8a43;stroke-width:6}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.tokyoTarget{
+ position:absolute;left:66%;top:60%;transform:translate(-50%,-50%);z-index:15;
+ width:66px;height:66px;border-radius:50%;background:#ed5a50;border:5px solid #fff;
+ box-shadow:0 0 0 5px #ed5a5055,0 8px 18px #0003;
+ display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-weight:1000
+}
+.tokyoTarget .t1{font-size:16px;line-height:1}.tokyoTarget .t2{font-size:23px;line-height:1.1}
+.transportToken{
+ position:absolute;z-index:22;pointer-events:none;display:flex;align-items:center;gap:0;
+ filter:drop-shadow(0 4px 3px #0005);white-space:nowrap;line-height:1
+}
+.transportToken .carrier{font-size:34px;display:block;line-height:1}
+.transportToken .cargo{font-size:30px;display:block;line-height:1;margin-left:-3px;background:#fff9;border-radius:8px;padding:1px 3px;font-weight:1000}
+.transportToken.fast .carrier{font-size:40px}
+.transportToken.fast .cargo{font-size:23px;margin-left:-7px;background:transparent;border:0;letter-spacing:-7px;padding-right:7px}
+
+.loadingStage{
+ position:absolute;z-index:30;width:110px;height:76px;pointer-events:none;
+ transform:translate(-50%,-50%);filter:drop-shadow(0 5px 4px #0004)
+}
+.loadingVehicle{
+ position:absolute;left:34px;bottom:7px;font-size:42px;line-height:1
+}
+.loadingCargo{
+ position:absolute;left:50px;bottom:25px;font-size:18px;letter-spacing:-6px;white-space:nowrap;
+ opacity:0;animation:showLoadedCargo .01s forwards .48s
+}
+@keyframes showLoadedCargo{to{opacity:1}}
+.loadingItem{
+ position:absolute;font-size:24px;left:7px;top:2px;opacity:0
+}
+.loadingItem.i1{animation:loadOne .18s ease-in forwards 0s}
+.loadingItem.i2{animation:loadOne .18s ease-in forwards .15s}
+.loadingItem.i3{animation:loadOne .18s ease-in forwards .30s}
+@keyframes loadOne{
+ 0%{opacity:0;transform:translate(0,0) scale(1.15)}
+ 20%{opacity:1}
+ 100%{opacity:1;transform:translate(48px,39px) scale(.72)}
+}
+.region.loading{opacity:.6;filter:saturate(.75)}
+
+.splash{position:absolute;z-index:24;width:78px;height:64px;pointer-events:none;transform:translate(-50%,-50%)}
+.splash .drop{position:absolute;font-size:34px;line-height:1;opacity:0;filter:drop-shadow(0 3px 2px #0003)}
+.splash .d1{left:19px;top:17px;animation:splashDrop .7s ease-out forwards}
+.splash .d2{left:1px;top:20px;animation:splashDropLeft .7s ease-out .04s forwards}
+.splash .d3{left:43px;top:22px;animation:splashDropRight .7s ease-out .07s forwards}
+.splash .d4{left:24px;top:2px;font-size:28px;animation:splashDropUp .62s ease-out .02s forwards}
+@keyframes splashDrop{0%{opacity:0;transform:scale(.35)}25%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.25)}}
+@keyframes splashDropLeft{0%{opacity:0;transform:scale(.3)}25%{opacity:1}100%{opacity:0;transform:translate(-24px,-18px) rotate(-25deg) scale(1.1)}}
+@keyframes splashDropRight{0%{opacity:0;transform:scale(.3)}25%{opacity:1}100%{opacity:0;transform:translate(24px,-18px) rotate(25deg) scale(1.1)}}
+@keyframes splashDropUp{0%{opacity:0;transform:scale(.3)}25%{opacity:1}100%{opacity:0;transform:translateY(-32px) scale(1.05)}}
+.shelfPane{background:#fff5db;padding:10px 10px 14px;display:flex;flex-direction:column;min-width:0}
+.phaseBox{
+ display:flex;gap:8px;align-items:center;justify-content:space-between;background:#fff;border-radius:17px;
+ padding:7px 9px;margin-bottom:7px;box-shadow:0 3px 10px #0001
+}
+.phaseText{font-weight:1000;font-size:clamp(17px,1.9vw,24px)}
+.timer{font-size:clamp(25px,3vw,38px);font-weight:1000;background:#17324d;color:white;border-radius:14px;padding:3px 10px;white-space:nowrap}
+.storeSign{background:#d94338;color:white;text-align:center;border-radius:15px 15px 5px 5px;padding:7px;font-size:clamp(19px,2.3vw,28px);font-weight:1000}
+.productShelves{
+ flex:1;min-height:0;background:#f7ead3;border:7px solid #7d512f;border-radius:8px 8px 18px 18px;
+ padding:6px;display:flex;flex-direction:column;gap:5px;box-shadow:inset 0 0 0 3px #d7aa72
+}
+.produceStand{
+ flex:1;min-height:0;position:relative;display:grid;grid-template-columns:62px 1fr;
+ background:linear-gradient(#fff8e9 0 64%,#bf7b3f 64% 72%,#8b542e 72% 100%);
+ border:3px solid #8a552d;border-radius:10px;overflow:hidden
+}
+.produceLabel{
+ background:#fff0c8;border-right:3px solid #8a552d;display:flex;align-items:center;justify-content:center;
+ flex-direction:column;font-weight:1000;line-height:1.05;z-index:4
+}
+.produceLabel .e{font-size:29px}.produceLabel .n{font-size:10px;margin-top:1px}
+.produceBin{
+ position:relative;overflow:hidden;min-width:0;
+ background:linear-gradient(165deg,#ffe9bf 0 58%,#ca884a 59% 70%,#90572f 71% 100%)
+}
+.produceBin:before{
+ content:"";position:absolute;left:4%;right:4%;bottom:7%;height:24%;background:#9b6137;
+ border:3px solid #714425;border-radius:4px 4px 10px 10px;transform:perspective(80px) rotateX(-9deg);z-index:1
+}
+.producePile{position:absolute;inset:1px 5px 10px 5px;z-index:2;pointer-events:none}
+.pileItem{
+ position:absolute;transform:translate(-50%,50%);font-size:clamp(15px,1.55vw,23px);
+ filter:drop-shadow(0 2px 1px #0002);line-height:1
+}
+.produceStand.bump .produceBin{animation:binBump .22s ease-out}
+@keyframes binBump{50%{transform:scale(1.025)}}
+.resultProductShelves{
+ flex:1;min-height:0;background:#f7ead3;border:6px solid #7d512f;border-radius:10px;
+ padding:5px;display:flex;flex-direction:column;gap:4px
+}
+.resultProductShelves .produceStand{grid-template-columns:54px 1fr;border-width:2px}
+.resultProductShelves .produceLabel{border-width:2px}
+.resultProductShelves .produceLabel .e{font-size:24px}
+.resultProductShelves .produceLabel .n{font-size:9px}
+.resultProductShelves .pileItem{font-size:clamp(12px,1.25vw,18px)}
+
+.g1Result{
+ position:absolute;inset:64px 0 0;background:#fff7df;z-index:70;
+ display:none;flex-direction:column;padding:16px 18px 14px
+}
+.g1Result.show{display:flex}
+.resultTitle{
+ text-align:center;font-weight:1000;font-size:clamp(28px,3.6vw,44px);
+ margin:0 0 10px;line-height:1.15
+}
+.resultCompare{
+ display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1;min-height:0
+}
+.resultBox{
+ background:white;border-radius:22px;padding:10px;display:flex;flex-direction:column;
+ min-height:0;box-shadow:0 6px 18px #0002
+}
+.resultBox h3{
+ text-align:center;font-size:clamp(19px,2.3vw,29px);margin:0 0 7px
+}
+
+.resultBtns{display:flex;justify-content:center;gap:14px;margin-top:9px}
+
+
+/* GAME1: 途中リザルト・販売演出 */
+.shelfPane{position:relative}
+.singleResultWrap{
+  position:relative;flex:1;min-height:0;width:min(1000px,95vw);
+  margin:0 auto;background:#fff;border-radius:24px;padding:12px;
+  box-shadow:0 7px 22px #0002
+}
+.singleResultWrap .resultProductShelves{height:100%}
+.g1Decision{
+  display:flex;justify-content:center;gap:24px;margin-top:14px;flex-wrap:wrap
+}
+.g1Decision button{
+  min-width:230px;border:0;border-radius:22px;padding:15px 22px;
+  font-size:clamp(23px,3vw,34px);font-weight:1000;
+  box-shadow:0 7px 0 #0002
+}
+.g1Decision .good{background:#dff4cf;color:#245e2d}
+.g1Decision .bad{background:#ffe1e1;color:#8e2828}
+.g1FinishBtns{
+  display:none;justify-content:center;gap:14px;margin-top:12px
+}
+.g1FinishBtns.show{display:flex}
+.g1ResultMessage{
+  min-height:46px;text-align:center;font-size:clamp(25px,3.2vw,40px);
+  font-weight:1000;margin-top:10px
+}
+.customerLayer{
+  position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:20
+}
+.shopper{
+  position:absolute;font-size:38px;line-height:1;pointer-events:none;
+  filter:drop-shadow(0 3px 2px #0004);z-index:25;
+  transform:translate(-50%,-50%)
+}
+.shopper .walkerIcon{display:inline-block}
+.shopper .heldGood{
+  display:none;position:absolute;left:25px;top:-8px;font-size:25px;
+  filter:drop-shadow(0 2px 1px #0003)
+}
+.shopper.carrying .heldGood{display:block}
+  15%{opacity:1}
+  75%{opacity:1}
+  100%{opacity:0;transform:translate(-180px,-20px) scale(1.05)}
+}
+.g1FlyLayer{
+  position:absolute;inset:64px 0 0 0;z-index:68;
+  pointer-events:none;overflow:visible
+}
+.shelfFlyItem{
+  position:absolute;left:0;top:0;z-index:5;
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:38px;line-height:1;
+  background:#fffdf2;border:3px solid #ffd255;
+  box-shadow:0 5px 12px #0004;
+  pointer-events:none;will-change:transform
+}
+.g1ClearDialog h2{font-size:clamp(38px,5vw,60px)}
+.g1ClearDialog .clearMark{font-size:72px;line-height:1;margin:8px 0}
+
+
+/* 東京に届いた商品 → 棚へ移す演出 */
+.tokyoArrivalItem,
+.shelfTransferItem{
+  position:fixed;
+  left:0;top:0;
+  z-index:9999;
+  width:52px;height:52px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:#fffdf0;
+  border:4px solid #ffd24d;
+  box-shadow:0 7px 16px #0005;
+  font-size:38px;
+  line-height:1;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+  will-change:transform,left,top;
+}
+.tokyoArrivalItem{
+  animation:arrivalPop .28s ease-out both;
+}
+@keyframes arrivalPop{
+  0%{transform:translate(-50%,-50%) scale(.45);opacity:0}
+  70%{transform:translate(-50%,-50%) scale(1.18);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:1}
+}
+.tokyoTarget.receiving{
+  animation:tokyoReceive .42s ease-out;
+}
+@keyframes tokyoReceive{
+  50%{box-shadow:0 0 0 14px #ffe25399,0 10px 24px #0003;transform:translate(-50%,-50%) scale(1.08)}
+}
+
+
+/* v8 asset + story updates */
+.dialogArt{width:min(620px,82vw);height:min(330px,40vh);margin:10px auto 10px;border-radius:22px;
+  background:linear-gradient(135deg,#f8fbff,#e7f0ff);border:4px solid #d4dced;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 2px #fff,0 8px 20px #0002;overflow:hidden}
+.dialogArt img{width:100%;height:100%;object-fit:cover;display:block}
+.dialogArt.placeholder{font-size:70px;letter-spacing:8px;position:relative;color:#2d4f84;font-weight:1000;flex-direction:column;gap:8px}
+.dialogArt.placeholder .cap{font-size:24px;letter-spacing:1px;color:#5f6f85}
+.overlayTapNote{margin-top:10px;font-size:20px;font-weight:1000;color:#38608f}
+.storyDialog .resultBtns{margin-top:12px}
+.g1StoryOverlay{cursor:pointer}
+.g1SceneFigure{font-size:72px;line-height:1}
+.g1SceneRow{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+
+.stationCardPreview{width:100%;height:56px;border-radius:12px;border:2px solid #bfc9d4;overflow:hidden;margin-top:6px;background:#eef5fb}
+.stationCardPreview img{width:100%;height:100%;object-fit:contain;display:block;padding:2px}
+.buildCard .miniAsset{width:100%;height:58px;border-radius:12px;border:2px solid #d6dde3;overflow:hidden;margin-top:6px;background:#f6f9fc}
+.buildCard .miniAsset img{width:100%;height:100%;object-fit:contain;display:block}
+.buildCard.dimmed{opacity:.35;filter:grayscale(.25);pointer-events:none}
+.buildCard.stationFocus{box-shadow:0 0 0 6px #ffd54d55}
+.stationDialogArt{width:min(480px,82vw);height:min(235px,29vh);margin:10px auto 12px;border-radius:22px;overflow:hidden;border:4px solid #d8e2ec;box-shadow:0 8px 20px #0002}
+.stationDialogArt img{width:100%;height:100%;object-fit:cover;display:block}
+
+.stationBuilding{padding:0;overflow:hidden;background:#f5f5f5}
+.stationBuilding .stationScene{width:100%;height:100%;object-fit:cover;display:block}
+.stationBuilding .stationLabel{display:none!important}
+.building{box-shadow:none;background:none!important;border:0!important;overflow:visible}
+.building .assetImg{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 6px 10px #0004)}
+.building .buildingLabel{display:none!important}
+.dragGhost.building{background:none!important;border:0!important;box-shadow:none!important}
+.dragGhost.building .buildingLabel{display:none}
+.dragGhost.station{background:none!important;padding:0;border:0}
+.dragGhost.station .stationScene{width:150px;height:92px;border-radius:12px;border:4px solid #fff;box-shadow:0 8px 10px #0005;object-fit:cover;display:block}
+
+/* human/car behind buildings */
+.ambientPerson,.ambientCar{z-index:5 !important}
+.building{z-index:10 !important}
+.stationBuilding{z-index:11 !important}
+.train{z-index:12 !important}
+.peopleBurst{z-index:13 !important}
+
+/* night placement visibility */
+.townTimeTint{z-index:8 !important}
+.lot{z-index:16 !important}
+.lot.availableHint{border-color:#ffe15a !important;background:#fff27a38 !important;box-shadow:0 0 0 4px #ffe15a55,0 0 16px #fff28b88 !important}
+.placementOption{z-index:20 !important;border-color:#ff972f !important;background:#fff49e9f !important;box-shadow:0 0 0 7px #ffd74c66,0 0 18px #ffe88f88 !important}
+
+
+/* GAME1 clear: full-screen finish */
+#g1StoryOverlay.clearMode{
+  position:fixed;inset:0;z-index:1000;padding:0;background:linear-gradient(180deg,#fff7c9 0%,#ffe38a 52%,#ffd35c 100%);
+}
+#g1StoryOverlay.clearMode .dialog{
+  width:100vw;height:100vh;max-width:none;border-radius:0;padding:22px 28px 18px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:none;background:transparent;
+}
+#g1StoryOverlay.clearMode .dialogArt{
+  width:min(980px,90vw);height:min(520px,55vh);margin:8px auto 10px;border:7px solid #fff;border-radius:28px;
+  box-shadow:0 12px 34px #0003;background:#fff;
+}
+#g1StoryOverlay.clearMode #g1StoryTitle{
+  margin:2px 0 4px;font-size:clamp(48px,7vw,88px);line-height:1.0;color:#c74b18;text-shadow:0 4px 0 #fff,0 7px 16px #0002;
+}
+#g1StoryOverlay.clearMode #g1StoryText{
+  margin:4px 0 8px;font-size:clamp(22px,3vw,36px);color:#554018;
+}
+#g1StoryOverlay.clearMode #g1StoryBtns{margin-top:8px}
+#g1StoryOverlay.clearMode #g1StoryBtns .smallbtn{font-size:22px;padding:13px 22px}
+
+/* GAME 2 */
+#g2{background:#dff4ff;padding-top:64px}
+.townLayout{display:grid;grid-template-columns:76% 24%;width:100%;height:100%}
+.townBoard{
+ position:relative;overflow:hidden;
+ background:linear-gradient(#dff8c8 0 46%,#d7f3bd 46% 54%,#c9efae 54% 100%);
+ border-right:6px solid #6c8da2
+}
+.roadH,.roadV{position:absolute;background:#7e858b;border:3px solid #ececec;z-index:1}
+.roadH:before,.roadV:before{content:"";position:absolute;border-color:#f7dc5e;border-style:dashed}
+.roadH{height:30px;left:0;width:100%}.roadH:before{left:0;right:0;top:11px;border-width:2px 0 0}
+.roadV{display:none!important}.roadV:before{display:none}
+.rh1{top:25%}.rh2{top:73%}.rh3{display:none}
+.rv1{left:20%}.rv2{left:80%}.rv3{display:none}
+.rail{
+ position:absolute;left:0;top:49%;width:100%;height:28px;
+ background:repeating-linear-gradient(90deg,#4d4d4d 0 12px,#c6a76d 12px 18px);
+ border-top:5px solid #3d3d3d;border-bottom:5px solid #3d3d3d;z-index:4;
+ transform:translateY(-50%)
+}
+.stationSlot{
+ position:absolute;top:49%;transform:translate(-50%,-50%);width:102px;height:82px;
+ border:4px dashed #506c84;border-radius:16px;background:#ffffffc9;z-index:10;display:none;
+ align-items:center;justify-content:center;font-weight:1000;font-size:16px;text-align:center
+}
+.stationSlot.glow{animation:slotGlow .75s infinite alternate;background:#fff9a4;border-color:#ff9c2a}
+@keyframes slotGlow{to{box-shadow:0 0 0 10px #ffde4b66;transform:translate(-50%,-50%) scale(1.05)}}
+.stationBuilding{
+ position:absolute;top:49%;transform:translate(-50%,-50%);width:108px;height:86px;
+ background:#f5f5f5;border:5px solid #496b84;border-radius:13px;z-index:11;
+ display:flex;align-items:center;justify-content:center;flex-direction:column;font-weight:1000;
+ box-shadow:0 7px 12px #0003
+}
+.stationBuilding:after{
+ content:"";position:absolute;left:-18px;right:-18px;bottom:-14px;height:15px;
+ background:#b9b9b9;border:3px solid #777;border-radius:5px;z-index:-1
+}
+.stationBuilding .emoji{font-size:38px;line-height:1}
+.lot{
+ position:absolute;transform:translate(-50%,-50%);width:9.10%;height:11.50%;
+ border:2px dashed transparent;border-radius:8px;z-index:2;background:transparent;
+ pointer-events:none
+}
+.lot.availableHint{
+ border-color:#ffffffd0;background:#ffffff16
+}
+.lot.occupied{
+ border-color:transparent!important;background:transparent!important;opacity:1
+}
+.placementOption{
+ position:absolute;z-index:15;border:4px solid #ff972f;background:#fff3a277;border-radius:12px;
+ animation:lotGlow .65s infinite alternate;cursor:pointer;touch-action:manipulation
+}
+@keyframes lotGlow{to{box-shadow:0 0 0 8px #ffe06366;background:#fff7b8aa}}
+.building{
+ position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;
+ box-shadow:0 6px 12px #0003;z-index:7;transform-origin:center bottom;overflow:visible
+}
+.building.house{
+ background:#fff3c8;border:3px solid #915f3a;border-radius:5px 5px 8px 8px
+}
+.building.house .roof{
+ position:absolute;left:-7%;top:-27%;width:114%;height:38%;background:#d65d4c;
+ clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 2px 1px #0003)
+}
+.building.house .door{position:absolute;bottom:0;left:39%;width:22%;height:40%;background:#88502d;border-radius:3px 3px 0 0}
+.building.house .win{position:absolute;top:26%;left:12%;width:22%;height:22%;background:#b8ebff;border:2px solid #fff}
+.building.house .win.r{left:auto;right:12%}
+.building.shopA{background:#fff;border:3px solid #5c7890;border-radius:7px}
+.building.shopA .sign{font-weight:1000;font-size:11px;background:#ffda58;width:100%;text-align:center;padding:2px}
+.building.shopA .awning{width:100%;height:22%;background:repeating-linear-gradient(90deg,#e95353 0 12%,#fff 12% 24%)}
+.building.shopA .front{flex:1;width:76%;background:#bce9ff;border:3px solid #64889e;margin:4px}
+.building.shopB{background:#f6f3ee;border:4px solid #556875;border-radius:7px}
+.building.shopB .sign{font-weight:1000;font-size:13px;background:#4b91c6;color:#fff;width:100%;text-align:center;padding:3px}
+.building.shopB .floors{flex:1;width:95%;margin:3px;background:repeating-linear-gradient(90deg,#bde9ff 0 10%,#f6f3ee 10% 14%);border:2px solid #73848f}
+.building.shopB .entrance{width:24%;height:25%;background:#9cd8f3;border:2px solid #5a7787}
+.building.school{background:#f6eee2;border:4px solid #876e58;border-radius:7px}
+.building.school .schoolTop{width:100%;background:#7aa55a;color:#fff;text-align:center;font-size:14px;font-weight:1000;padding:4px}
+.building.school .schoolWin{flex:1;width:94%;margin:4px;background:repeating-linear-gradient(90deg,#b9e7ff 0 9%,#f6eee2 9% 13%);border:2px solid #8a7766}
+.building.school .clock{position:absolute;top:-15px;width:31px;height:31px;border-radius:50%;background:#fff;border:3px solid #75695f;text-align:center;font-size:18px;line-height:24px}
+.building.hospital{background:#f8fbff;border:4px solid #6c8798;border-radius:8px}
+.building.hospital .cross{font-size:34px;color:#e24444;font-weight:1000;line-height:1}
+.building.hospital .hName{font-weight:1000;font-size:14px}
+.building.hospital .hWin{width:88%;flex:1;margin:4px;background:repeating-linear-gradient(90deg,#bee8ff 0 10%,#f8fbff 10% 15%);border:2px solid #7893a2}
+.initialHouse{opacity:.92}
+.train{
+ position:absolute;top:49%;left:-520px;width:480px;height:auto;
+ z-index:12;pointer-events:none;will-change:transform;
+ filter:drop-shadow(0 5px 5px #0005)
+}
+.train img{display:block;width:100%;height:auto;object-fit:contain}
+.peopleBurst{position:absolute;z-index:15;transform:translate(-50%,-100%);font-size:29px;background:#fff;border-radius:14px;padding:5px 8px;box-shadow:0 4px 10px #0003;animation:burst 1s forwards}
+@keyframes burst{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-160%) scale(1.12)}}
+.townBanner{display:none!important}
+.sidePanel{background:#fffaf0;padding:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden}.townStatus{display:flex;justify-content:space-between;gap:8px;background:white;border-radius:16px;padding:8px 10px;font-weight:1000}.stars{font-size:24px;letter-spacing:2px}.pop{font-size:21px}
+.buildCard{border:3px solid #c7d0d7;border-radius:16px;background:white;padding:7px;text-align:left;position:relative;min-height:66px}.buildCard.ready{border-color:#ff9b31;background:#fff4ba;animation:cardPulse .8s infinite alternate}.buildCard.selected{outline:5px solid #ff6b35}@keyframes cardPulse{to{box-shadow:0 0 0 6px #ffd54d66}}
+.buildCard{touch-action:none;cursor:grab}
+.buildCard:active{cursor:grabbing}
+.dragGhost{
+ position:fixed;z-index:300;pointer-events:none;transform:translate(-50%,-115%);
+ filter:drop-shadow(0 8px 8px #0005);opacity:.94
+}
+.dragGhost.station{font-size:64px}
+.dragGhost.building{min-width:86px;min-height:68px}
+.placementOption.dragTarget{
+ pointer-events:none;border-width:5px;background:#fff49e99;
+ box-shadow:0 0 0 9px #ffd74c66
+}
+.stationSlot.dropGlow{background:#fff18a!important;border-color:#ff6f22!important;box-shadow:0 0 0 12px #ffd74c77!important}
+
+.cardHead{display:flex;align-items:center;justify-content:space-between;font-weight:1000;font-size:17px}.cardIcon{font-size:25px}.gauge{height:14px;background:#e3e7ea;border-radius:10px;overflow:hidden;margin-top:5px;border:1px solid #b5c0c8}.gaugeFill{height:100%;width:0;background:linear-gradient(90deg,#65c76d,#ffd94f);transition:width .15s linear}.readyText{font-size:12px;font-weight:1000;color:#bc4c17;min-height:14px}.stationCard{border-color:#778ca4}.stationCard.ready{border-color:#ff7a33}.sideHint{font-size:12px;font-weight:800;line-height:1.25;color:#506170;text-align:center;margin-top:auto}
+
+
+/* まち：朝→昼→夜（画面の色だけで表現） */
+.townTimeTint{
+ position:absolute;inset:0;z-index:32;pointer-events:none;
+ transition:background 1.8s ease,box-shadow 1.8s ease
+}
+.townBoard.time-morning .townTimeTint{
+ background:linear-gradient(180deg,#ffb65f45 0%,#ffe7aa2b 42%,#fff6d210 75%,transparent 100%)
+}
+.townBoard.time-day .townTimeTint{
+ background:linear-gradient(180deg,#85d5ff20 0%,transparent 55%)
+}
+.townBoard.time-night .townTimeTint{
+ background:linear-gradient(180deg,#061b4a9a 0%,#153b6e78 60%,#081b3e91 100%);
+ box-shadow:inset 0 0 100px #020a1f88
+}
+.townBoard.time-night .building{filter:brightness(.78) saturate(.88)}
+.townBoard.time-night .stationBuilding{filter:brightness(.82)}
+.townBoard.time-night .roadH{filter:brightness(.72)}
+.townBoard.time-night .rail{filter:brightness(.72)}
+
+.ambientPerson,.ambientCar{position:absolute;z-index:9;pointer-events:none;line-height:1;filter:drop-shadow(0 2px 2px #0003)}
+.ambientPerson{font-size:33px;line-height:1}
+.ambientCar{font-size:42px;z-index:8}
+.rainCurtain{position:absolute;inset:0;z-index:40;pointer-events:none;background:linear-gradient(#6d819622,#58708512)}
+.rainDrop{position:absolute;top:-12%;width:2px;height:28px;background:#d8f2ffcc;transform:rotate(12deg);animation:rainFall .75s linear infinite}
+@keyframes rainFall{to{transform:translate(45px,125vh) rotate(12deg)}}
+#g2.viewMode{padding-top:0}
+#g2.viewMode .topbar,#g2.viewMode .sidePanel,#g2.viewMode .townResult,#g2.viewMode .overlay,#g2.viewMode .townBanner{display:none!important}
+#g2.viewMode .townLayout{grid-template-columns:1fr;height:100%}
+#g2.viewMode .townBoard{border-right:0}
+
+.townResult{position:absolute;inset:64px 0 0;background:#eaf8ffdd;backdrop-filter:blur(2px);z-index:80;display:none;align-items:center;justify-content:center;padding:22px}.townResult.show{display:flex}.townResultCard{width:min(850px,93vw);background:#fff;border-radius:30px;padding:24px;text-align:center;box-shadow:0 18px 50px #0004}.townResultCard h2{font-size:clamp(32px,4.5vw,52px);margin:0 0 10px}.beforeAfter{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:12px 0}.baBox{border-radius:20px;padding:14px;background:#f4f9ed;border:3px solid #b7d3a7}.baBox h3{font-size:25px;margin:0 0 8px}.miniTown{height:180px;border-radius:15px;background:linear-gradient(#dff8c8 0 78%,#aaa 78% 84%,#dff8c8 84%);position:relative;overflow:hidden}.miniHouse{position:absolute;font-size:36px}.nowTown{font-size:48px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:18px}.nowTown span{filter:drop-shadow(0 3px 3px #0002)}.resultMessage{font-size:clamp(22px,3vw,34px);font-weight:1000;line-height:1.45}
+
+@media (orientation:portrait){
+  .menuCards{grid-template-columns:1fr;gap:16px}
+  .menuCard{min-height:220px}
+  .g1Body{grid-template-columns:60% 40%}
+  .townLayout{grid-template-columns:72% 28%}
+}
+
+/* v10: 配置マスを詰め、店Bを横長に見せる */
+.building.shopB .assetImg{width:100%;height:100%;object-fit:fill}
+.buildCard[data-build="shopB"] .miniAsset img{object-fit:contain}
+
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<section id="menu" class="screen active">
+  <div class="menuWrap">
+    <div class="menuTitle">こうつうで　くらしが　かわる！</div>
+    <div class="menuSub">やってみたい　ゲームを　えらぼう</div>
+    <div class="menuCards">
+      <button class="menuCard bigbtn" onclick="startGame1()">
+        <div class="icons">🚚🍎🐟🏪</div>
+        <div class="name">こうつうと　おみせ</div>
+        <div class="desc">とおくの　ものを<br>おみせに　とどけよう！</div>
+      </button>
+      <button class="menuCard bigbtn" onclick="startGame2()">
+        <div class="icons">🚉👥🏠🏪</div>
+        <div class="name">こうつうと　まち</div>
+        <div class="desc">えきを　つくって<br>まちを　おおきくしよう！</div>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- GAME 1 -->
+<section id="g1" class="screen">
+  <div class="topbar">
+    <button class="smallbtn" onclick="backToMenu()">← メニュー</button>
+    <div class="title">こうつうと　おみせ</div>
+    <button class="smallbtn" onclick="restartGame1()">もういちど</button>
+  </div>
+
+  <div class="g1Body">
+    <div class="mapPane" id="mapPane">
+      <div class="mapTitle" id="g1MapTitle">あるいて　はこぶ</div>
+      <img class="japanMap" src="images/japan_map.png" alt="日本地図">
+
+      <div class="fastNet" id="fastNet">
+        <svg viewBox="0 0 1000 700" preserveAspectRatio="none">
+          <path class="fastRoute" d="M790 154 C760 225 720 330 660 420"/>
+          <path class="fastRoute" d="M670 294 C675 335 670 380 660 420"/>
+          <path class="fastRoute road" d="M540 378 C580 392 620 408 660 420"/>
+          <path class="fastRoute" d="M460 455 C525 448 600 432 660 420"/>
+          <path class="fastRoute" d="M310 539 C425 515 548 463 660 420"/>
+        </svg>
+      </div>
+
+      <button class="region" data-id="hokkaido" style="left:79%;top:22%"><span class="place">ほっかいどう</span><span class="product">🥔</span></button>
+      <button class="region" data-id="tohoku" style="left:67%;top:42%"><span class="place">とうほく</span><span class="product">🍎</span></button>
+      <button class="region" data-id="kanto" style="left:54%;top:54%"><span class="place">かんとう</span><span class="product">🥬</span></button>
+      <button class="region" data-id="kansai" style="left:46%;top:65%"><span class="place">かんさい</span><span class="product">🍊</span></button>
+      <button class="region" data-id="kyushu" style="left:31%;top:77%"><span class="place">きゅうしゅう</span><span class="product">🍓</span></button>
+
+      <div class="tokyoTarget" id="tokyoTarget"><div class="t1">とうきょう</div><div class="t2">🏪</div></div>
+    </div>
+
+    <div class="shelfPane">
+      <div class="phaseBox">
+        <div class="phaseText" id="phaseText">あるいて　はこぶ</div>
+        <div class="timer"><span id="g1Time">30</span>びょう</div>
+      </div>
+      <div class="storeSign">とうきょうの　おみせ</div>
+      <div class="productShelves" id="shelf"></div>
+    </div>
+  </div>
+  <div class="g1FlyLayer" id="g1FlyLayer"></div>
+
+  <div class="overlay" id="g1Opening"><div class="dialog storyDialog">
+    <div class="dialogArt"><img src="images/shop_open.png" alt="おみせを ひらきます"></div>
+    <h2>おみせを　ひらきます！</h2>
+    <p>うりものを　あつめよう！</p>
+    <button class="bigbtn go" onclick="beginG1OpeningNext()">つぎへ</button>
+  </div></div>
+
+  <div class="overlay" id="g1Intro"><div class="dialog storyDialog">
+    <div class="dialogArt"><img src="images/shop_walk.png" alt="あるいて はこぼう"></div>
+    <h2>あるいて　はこぼう！</h2>
+    <p>さんちの　ものを　タップして<br>とうきょうの　おみせに　とどけよう。</p>
+    <button class="bigbtn go" onclick="beginG1Slow()">スタート！</button>
+  </div></div>
+
+  <div class="overlay" id="g1Transition" onclick="beginG1FastFromTransition()"><div class="dialog">
+    <h2 id="g1TransitionTitle">のりものが　つかえるようになった！</h2>
+  </div></div>
+
+  <div class="g1Result" id="g1Result">
+    <div class="resultTitle" id="g1ResultTitle">たくさん　あつまったかな？</div>
+    <div class="singleResultWrap">
+      <div class="resultProductShelves" id="slowResultShelf"></div>
+      <div class="customerLayer" id="slowCustomerLayer"></div>
+    </div>
+    <div class="g1Decision" id="g1DecisionBtns">
+      <button class="good" onclick="slowEnough()">あつまった　○</button>
+      <button class="bad" onclick="slowNotEnough()">たりない　❌</button>
+    </div>
+    <div class="g1ResultMessage" id="g1ResultMessage"></div>
+    <div class="g1FinishBtns" id="g1FinishBtns">
+      <button class="smallbtn" onclick="restartGame1()">もういちど</button>
+      <button class="smallbtn" onclick="backToMenu()">メニューへ</button>
+    </div>
+  </div>
+
+  <div class="overlay g1StoryOverlay" id="g1StoryOverlay" style="display:none">
+    <div class="dialog storyDialog">
+      <div class="dialogArt placeholder" id="g1StoryArt"><div class="g1SceneRow"><span class="g1SceneFigure">🖼️</span></div><div class="cap">画像は　あとで　さしかえできます</div></div>
+      <h2 id="g1StoryTitle">メッセージ</h2>
+      <p id="g1StoryText"></p>
+      <div class="overlayTapNote" id="g1StoryTap">タップで　つづく</div>
+      <div class="resultBtns" id="g1StoryBtns" style="display:none">
+        <button class="smallbtn" onclick="restartGame1();event.stopPropagation();">もういちど</button>
+        <button class="smallbtn" onclick="backToMenu();event.stopPropagation();">メニューへ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="g1ClearOverlay"></div>
+</section>
+
+<!-- GAME 2 -->
+<section id="g2" class="screen">
+  <div class="topbar">
+    <button class="smallbtn" onclick="backToMenu()">← メニュー</button>
+    <div class="title">こうつうと　まち</div>
+    <button class="smallbtn" onclick="restartGame2()">もういちど</button>
+  </div>
+
+  <div class="townLayout">
+    <div class="townBoard time-morning" id="townBoard">
+      <div class="townTimeTint" id="townTimeTint"></div>
+      <div class="townBanner" id="townBanner">まんなかに　えきを　おいてみよう！</div>
+      <div class="roadH rh1"></div><div class="roadH rh2"></div><div class="roadH rh3"></div>
+      
+      <div class="rail"></div>
+      <div class="stationSlot" data-station="0" style="left:24%">えきの<br>ばしょ</div>
+      <div class="stationSlot" data-station="1" style="left:50%">さいしょの<br>えき</div>
+      <div class="stationSlot" data-station="2" style="left:76%">えきの<br>ばしょ</div>
+    </div>
+
+    <aside class="sidePanel">
+      <div class="townStatus"><div class="stars" id="townStars">☆☆☆</div><div class="pop">👥 <span id="popCount">0</span>にん</div></div>
+      <button class="buildCard stationCard ready" id="stationCard" data-build="station">
+        <div class="cardHead"><span>🚉 えき</span><span class="cardIcon">🚉</span></div>
+        <div class="stationCardPreview"><img src="images/station.png" alt="station"></div>
+        <div class="gauge"><div class="gaugeFill" id="stationGauge"></div></div><div class="readyText" id="stationReadyText">まんなかへ　ドラッグ！</div>
+      </button>
+      <button class="buildCard" data-build="house"><div class="cardHead"><span>🏠 いえ</span><span>5にん</span></div><div class="miniAsset"><img src="images/house.png" alt="house"></div><div class="gauge"><div class="gaugeFill" id="gauge-house"></div></div><div class="readyText" id="ready-house"></div></button>
+      <button class="buildCard" data-build="shopA"><div class="cardHead"><span>🏪 みせA</span><span>10にん</span></div><div class="miniAsset"><img src="images/shop_a.png" alt="shopA"></div><div class="gauge"><div class="gaugeFill" id="gauge-shopA"></div></div><div class="readyText" id="ready-shopA"></div></button>
+      <button class="buildCard" data-build="shopB"><div class="cardHead"><span>🏬 みせB</span><span>20にん</span></div><div class="miniAsset"><img src="images/shop_b.png" alt="shopB"></div><div class="gauge"><div class="gaugeFill" id="gauge-shopB"></div></div><div class="readyText" id="ready-shopB"></div></button>
+      <button class="buildCard" data-build="school"><div class="cardHead"><span>🏫 がっこう</span><span>30にん</span></div><div class="miniAsset"><img src="images/school.png" alt="school"></div><div class="gauge"><div class="gaugeFill" id="gauge-school"></div></div><div class="readyText" id="ready-school"></div></button>
+      <button class="buildCard" data-build="hospital"><div class="cardHead"><span>🏥 びょういん</span><span>40にん</span></div><div class="miniAsset"><img src="images/hospital.png" alt="hospital"></div><div class="gauge"><div class="gaugeFill" id="gauge-hospital"></div></div><div class="readyText" id="ready-hospital"></div></button>
+      <div class="sideHint">ひかった　カードを　ドラッグして<br>おきたい　ばしょで　はなそう</div>
+    </aside>
+  </div>
+
+  <div class="overlay" id="townIntroOverlay" onclick="beginTownIntro()"><div class="dialog storyDialog">
+    <div class="stationDialogArt"><img src="images/station.png" alt="station"></div>
+    <h2>まんなかに　えきを<br>おいてみよう！</h2>
+    <p>えきのカードを　ドラッグして<br>まんなかの　ばしょに　おこう。</p>
+    <div style="font-size:22px;font-weight:1000;margin-top:12px">タップして　はじめる</div>
+  </div></div>
+
+  <div class="overlay" id="stationUnlockOverlay"><div class="dialog storyDialog">
+    <div class="stationDialogArt"><img src="images/station.png" alt="station"></div>
+    <h2>あたらしい　えきが<br>つくれるようになった！</h2>
+    <p>えきを　ふやして<br>もっと　ひとを　よぼう！</p>
+    <button class="bigbtn go" onclick="closeStationUnlock()">えきを　つくる！</button>
+  </div></div>
+
+  <div class="townResult" id="townResult"><div class="townResultCard">
+    <h2>まちが　おおきくなった！</h2>
+    <div class="resultMessage">えきが　ふえて　ひとが　きた。<br>いえや　みせも　ふえて、まちが　おおきくなった！</div>
+    <div class="resultBtns">
+      <button class="smallbtn" onclick="openTownView(event)">まちをみる</button>
+      <button class="smallbtn" onclick="restartGame2()">もういちど</button>
+      <button class="smallbtn" onclick="backToMenu()">メニューへ</button>
+    </div>
+  </div></div>
+</section>
+
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const ASSET_SRC={house:'images/house.png',shopA:'images/shop_a.png',shopB:'images/shop_b.png',school:'images/school.png',hospital:'images/hospital.png',station:'images/station.png'};
+const G1_SCENE_IMAGES={
+  soldout:'images/shop_soldout.png',
+  worry:'images/shop_trouble.png',
+  unlock:'images/shop_transport.png',
+  soldmany:'images/shop_success.png'
+};
+const G1_PLACEHOLDER_SCENES={
+  again:'<div class="g1SceneRow"><span class="g1SceneFigure">📦</span><span class="g1SceneFigure">🏪</span></div><div class="cap">もういちど　はこぼう！</div>'
+};
+function showScreen(id){
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  $('#'+id).classList.add('active');
+}
+function backToMenu(){
+  stopG1();
+  stopTown();
+  showScreen('menu');
+}
+
+/* ---------------- GAME 1 ---------------- */
+const G1_ORDER=['hokkaido','tohoku','kanto','kansai','kyushu'];
+const G1_REGIONS={
+  hokkaido:{emoji:'🥔',name:'じゃがいも',slow:9000,fast:520,seaFail:true,failDx:-34,failDy:48,vehicles:['🚢','✈️']},
+  tohoku:{emoji:'🍎',name:'りんご',slow:15500,fast:470,vehicles:['🚚','🚄']},
+  kanto:{emoji:'🥬',name:'やさい',slow:5200,fast:340,vehicles:['🚚','🚄']},
+  kansai:{emoji:'🍊',name:'みかん',slow:43000,fast:430,vehicles:['🚚','🚄']},
+  kyushu:{emoji:'🍓',name:'いちご',slow:9500,fast:560,seaFail:true,failDx:42,failDy:-30,vehicles:['🚢','✈️']}
+};
+const FAST_LOAD=3,PILE_VISUAL_MAX=96;
+let g1Phase='idle',g1Tick=null,g1Time=30,g1Gen=0;
+let g1Counts={},g1SlowCounts={},g1FastCounts={};
+let g1StoryTimers=[],g1SaleTimer=null,g1CustomerTimer=null;
+let g1StoryTapAction=null;
+function blankCounts(){return Object.fromEntries(G1_ORDER.map(k=>[k,0]));}
+function buildProductShelves(el,counts){
+  counts=counts||blankCounts();el.innerHTML='';
+  G1_ORDER.forEach(k=>{
+    const info=G1_REGIONS[k],stand=document.createElement('div');stand.className='produceStand';stand.dataset.product=k;
+    const label=document.createElement('div');label.className='produceLabel';
+    label.innerHTML=`<div class="e">${info.emoji}</div><div class="n">${info.name}</div>`;
+    const bin=document.createElement('div');bin.className='produceBin';
+    const pile=document.createElement('div');pile.className='producePile';
+    const count=counts[k]||0, visible=Math.min(count,PILE_VISUAL_MAX);
+    for(let i=0;i<visible;i++){
+      const p=document.createElement('span');p.className='pileItem';p.textContent=info.emoji;
+      const row=Math.floor(i/12),col=i%12;
+      const stagger=(row%2)*3.4;
+      const jitter=((i*17)%7)-3;
+      p.style.left=(4.5+col*7.9+stagger+jitter*.22)+'%';
+      p.style.bottom=(6+row*10.8)+'%';
+      p.style.zIndex=String(10+row);
+      pile.appendChild(p);
+    }
+    bin.appendChild(pile);stand.append(label,bin);el.appendChild(stand);
+  });
+}
+function renderG1Shelves(){
+  buildProductShelves($('#shelf'),g1Counts);
+}
+function clearG1StoryTimers(){
+  g1StoryTimers.forEach(clearTimeout);g1StoryTimers=[];
+  clearInterval(g1SaleTimer);g1SaleTimer=null;
+  clearInterval(g1CustomerTimer);g1CustomerTimer=null;
+  clearSaleState();
+  $$('.shopper,.shelfFlyItem,.tokyoArrivalItem,.shelfTransferItem').forEach(x=>x.remove());
+}
+function laterG1(fn,ms){
+  const id=setTimeout(fn,ms);g1StoryTimers.push(id);return id;
+}
+function showSlowResult(){
+  buildProductShelves($('#slowResultShelf'),g1SlowCounts);
+  $('#g1ResultTitle').textContent='たくさん　あつまったかな？';
+  $('#g1ResultMessage').textContent='';
+  $('#g1DecisionBtns').style.display='flex';
+  $('#g1FinishBtns').classList.remove('show');
+  $('#g1Result').classList.add('show');
+}
+let g1SaleState=null;
+
+function totalGoods(counts){
+  return G1_ORDER.reduce((sum,k)=>sum+(counts[k]||0),0);
+}
+function clearSaleState(){
+  if(g1SaleState && g1SaleState.timer)clearInterval(g1SaleState.timer);
+  g1SaleState=null;
+  $$('.shopper').forEach(x=>x.remove());
+}
+function chooseSaleProduct(counts,reserved){
+  const choices=G1_ORDER.filter(k=>(counts[k]||0)-(reserved[k]||0)>0);
+  if(!choices.length)return null;
+  return choices[Math.floor(Math.random()*choices.length)];
+}
+function spawnBuyingCustomer(){
+  const st=g1SaleState;
+  if(!st||st.done)return;
+
+  const projected=totalGoods(st.counts)-Object.values(st.reserved).reduce((a,b)=>a+b,0);
+  if(projected<=st.target)return;
+
+  const id=chooseSaleProduct(st.counts,st.reserved);
+  if(!id)return;
+  st.reserved[id]=(st.reserved[id]||0)+1;
+  st.active++;
+
+  const layer=st.layer,shelf=st.shelf;
+  const lr=layer.getBoundingClientRect();
+  const stand=shelf.querySelector(`.produceStand[data-product="${id}"] .produceBin`);
+  if(!stand){
+    st.reserved[id]--;st.active--;
+    return;
+  }
+  const tr=stand.getBoundingClientRect();
+
+  const shopper=document.createElement('div');
+  shopper.className='shopper';
+  shopper.innerHTML=`<span class="walkerIcon">🚶</span><span class="heldGood">${G1_REGIONS[id].emoji}</span>`;
+  const startX=lr.width*(.14+Math.random()*.72);
+  const startY=lr.height+34;
+  const targetX=(tr.left-lr.left)+tr.width*(.38+Math.random()*.25);
+  const targetY=(tr.top-lr.top)+tr.height*(.52+Math.random()*.16);
+  shopper.style.left=startX+'px';
+  shopper.style.top=startY+'px';
+  layer.appendChild(shopper);
+
+  const up=shopper.animate(
+    [{transform:'translate(-50%,-50%) translate(0,0)'},
+     {transform:`translate(-50%,-50%) translate(${targetX-startX}px,${targetY-startY}px)`}],
+    {duration:520+Math.random()*170,easing:'ease-out',fill:'forwards'}
+  );
+
+  up.onfinish=()=>{
+    up.cancel();
+    shopper.style.left=targetX+'px';
+    shopper.style.top=targetY+'px';
+
+    if(!g1SaleState || g1SaleState!==st){
+      shopper.remove();return;
+    }
+
+    // 棚から「1個」取り、持っている商品を見せる。
+    if((st.counts[id]||0)>0){
+      st.counts[id]--;
+      st.reserved[id]=Math.max(0,(st.reserved[id]||0)-1);
+      shopper.classList.add('carrying');
+      buildProductShelves(st.shelf,st.counts);
+    }else{
+      st.reserved[id]=Math.max(0,(st.reserved[id]||0)-1);
+    }
+
+    const exitX=lr.width*(.12+Math.random()*.76);
+    const exitY=lr.height+40;
+    const down=shopper.animate(
+      [{transform:'translate(-50%,-50%) translate(0,0)'},
+       {transform:`translate(-50%,-50%) translate(${exitX-targetX}px,${exitY-targetY}px)`}],
+      {duration:480+Math.random()*160,easing:'ease-in',fill:'forwards'}
+    );
+    down.onfinish=()=>{
+      shopper.remove();
+      st.active=Math.max(0,st.active-1);
+      maybeFinishCustomerSale();
+    };
+
+    maybeFinishCustomerSale();
+  };
+}
+function maybeFinishCustomerSale(){
+  const st=g1SaleState;
+  if(!st||st.done)return;
+  const remaining=totalGoods(st.counts);
+  const reserved=Object.values(st.reserved).reduce((a,b)=>a+b,0);
+
+  if(remaining<=st.target && reserved===0 && st.active===0){
+    st.done=true;
+    clearInterval(st.timer);
+    const done=st.onDone;
+    g1SaleState=null;
+    done();
+  }
+}
+function startCustomerSale(counts,shelf,layer,target,onDone){
+  clearSaleState();
+  g1SaleState={
+    counts,shelf,layer,target,onDone,
+    reserved:blankCounts(),active:0,done:false,timer:null
+  };
+
+  // 画面下から次々に来る。1人につき商品1個。
+  for(let i=0;i<4;i++)laterG1(()=>spawnBuyingCustomer(),i*150);
+  g1SaleState.timer=setInterval(()=>{
+    if(!g1SaleState)return;
+    spawnBuyingCustomer();
+    // 町ではなく店なので多すぎて見えなくならない程度に、最大6人前後。
+    if(g1SaleState && g1SaleState.active<4 && Math.random()<.45)spawnBuyingCustomer();
+    maybeFinishCustomerSale();
+  },230);
+}
+function slowEnough(){
+  $('#g1DecisionBtns').style.display='none';
+  $('#g1FinishBtns').classList.remove('show');
+  $('#g1ResultTitle').textContent='おきゃくさんが　きた！';
+  $('#g1ResultMessage').textContent='';
+  startCustomerSale(
+    g1SlowCounts,
+    $('#slowResultShelf'),
+    $('#slowCustomerLayer'),
+    0,
+    ()=>{
+      $('#g1Result').classList.remove('show');
+      showG1Story('すぐ　うりきれた！','また　あつめよう！','soldout',()=>{hideG1Story();beginG1SlowAgain();},false,'タップで　つぎへ');
+    }
+  );
+}
+function slowNotEnough(){
+  $('#g1DecisionBtns').style.display='none';
+  $('#g1Result').classList.remove('show');
+  showG1Story('どうしよう・・・','','worry',()=>{
+    showG1Story('のりものが　つかえるようになった！','','unlock',()=>{
+      showG1Story('もういちど　はこぼう！','','again',null,false,'');
+      laterG1(()=>{hideG1Story();beginG1Fast();},900);
+    },false,'タップで　つぎへ');
+  },false,'タップで　つぎへ');
+}
+function beginG1FastFromTransition(){
+  if(!$('#g1Transition').classList.contains('show'))return;
+  beginG1Fast();
+}
+function beginG1SlowAgain(){
+  clearG1StoryTimers();
+  g1Phase='slow';g1Counts=blankCounts();g1Gen++;
+  $('#fastNet').classList.remove('show');
+  renderG1Shelves();startG1Phase();
+}
+function animateGoodsToShelf(id,amount,myGen,done){
+  const source=$('#tokyoTarget');
+  if(!source){done();return;}
+
+  const sr=source.getBoundingClientRect();
+  const emoji=G1_REGIONS[id].emoji;
+  const arrivals=[];
+
+  source.classList.remove('receiving');
+  void source.offsetWidth;
+  source.classList.add('receiving');
+  setTimeout(()=>source.classList.remove('receiving'),450);
+
+  // ① まず「東京に届いた商品」を実体として東京の横に並べる。
+  for(let i=0;i<amount;i++){
+    const a=document.createElement('div');
+    a.className='tokyoArrivalItem';
+    a.textContent=emoji;
+    const offset=(i-(amount-1)/2)*44;
+    a.style.left=(sr.left+sr.width*.50+offset)+'px';
+    a.style.top=(sr.top+sr.height*.40)+'px';
+    document.body.appendChild(a);
+    arrivals.push(a);
+  }
+
+  // ② 少し東京に置いておき、その後「商品だけ」を1個ずつ棚へ運ぶ。
+  const HOLD_MS=520;
+  const STEP_MS=330;
+  const MOVE_MS=1050;
+  let completed=0;
+
+  arrivals.forEach((a,i)=>{
+    setTimeout(()=>{
+      if(myGen!==g1Gen || !(g1Phase==='slow'||g1Phase==='fast')){
+        a.remove();
+        return;
+      }
+
+      const target=document.querySelector(`#shelf .produceStand[data-product="${id}"] .produceBin`);
+      if(!target){
+        a.remove();
+        completed++;
+        if(completed===amount)done();
+        return;
+      }
+
+      const ar=a.getBoundingClientRect();
+      const tr=target.getBoundingClientRect();
+      const sx=ar.left+ar.width/2;
+      const sy=ar.top+ar.height/2;
+      const tx=tr.left+tr.width*(.42+Math.random()*.16);
+      const ty=tr.top+tr.height*(.44+Math.random()*.13);
+
+      // 到着品をそのまま「棚へ運ぶ商品」に切り替える。
+      a.classList.remove('tokyoArrivalItem');
+      a.classList.add('shelfTransferItem');
+
+      const dx=tx-sx,dy=ty-sy;
+      const lift=Math.min(-55,dy*.25);
+
+      const anim=a.animate(
+        [
+          {transform:'translate(-50%,-50%) translate3d(0,0,0) scale(1)',opacity:1},
+          {transform:`translate(-50%,-50%) translate3d(${dx*.45}px,${lift}px,0) scale(1.05)`,opacity:1,offset:.45},
+          {transform:`translate(-50%,-50%) translate3d(${dx}px,${dy}px,0) scale(.72)`,opacity:1}
+        ],
+        {
+          duration:MOVE_MS,
+          easing:'cubic-bezier(.20,.72,.20,1)',
+          fill:'forwards'
+        }
+      );
+
+      anim.onfinish=()=>{
+        a.remove();
+        if(myGen!==g1Gen || !(g1Phase==='slow'||g1Phase==='fast'))return;
+
+        // ③ 棚に実際に到着した瞬間に、初めて棚の商品を1個増やす。
+        dropToShelf(id,1);
+
+        completed++;
+        if(completed===amount)done();
+      };
+    },HOLD_MS+i*STEP_MS);
+  });
+}
+function runFastSale(){
+  g1Phase='selling';
+  g1FastCounts={...g1Counts};
+  buildProductShelves($('#slowResultShelf'),g1FastCounts);
+  $('#g1DecisionBtns').style.display='none';
+  $('#g1FinishBtns').classList.remove('show');
+  $('#g1ResultMessage').textContent='';
+  $('#g1ResultTitle').textContent='おきゃくさんが　きた！';
+  $('#g1Result').classList.add('show');
+  const total=totalGoods(g1FastCounts);
+  const target=Math.max(0,Math.floor(total/2));
+  laterG1(()=>{
+    startCustomerSale(
+      g1FastCounts,
+      $('#slowResultShelf'),
+      $('#slowCustomerLayer'),
+      target,
+      ()=>{
+        $('#g1Result').classList.remove('show');
+        showG1Story('たくさん　うれた！','とおくから　ものが　たくさん　とどいた！','soldmany',null,true,'');
+      }
+    );
+  },400);
+}
+
+
+function setG1StoryArt(key){
+  const art=$('#g1StoryArt');
+  const src=G1_SCENE_IMAGES[key];
+  if(src){
+    art.classList.remove('placeholder');
+    art.innerHTML=`<img src="${src}" alt="${key}">`;
+  }else{
+    art.classList.add('placeholder');
+    art.innerHTML=G1_PLACEHOLDER_SCENES[key] || '';
+  }
+}
+function hideG1Story(){
+  const ov=$('#g1StoryOverlay');
+  ov.style.display='none';
+  ov.classList.remove('clearMode');
+  g1StoryTapAction=null;
+  $('#g1StoryBtns').style.display='none';
+}
+function showG1Story(title,text,key,onTap,showButtons=false,tapLabel='タップで　つづく'){
+  clearG1StoryTimers();
+  setG1StoryArt(key);
+  const ov=$('#g1StoryOverlay');
+  ov.classList.toggle('clearMode',key==='soldmany');
+  $('#g1StoryTitle').innerHTML=title;
+  $('#g1StoryText').innerHTML=text||'';
+  $('#g1StoryTap').style.display=onTap?'block':'none';
+  $('#g1StoryTap').textContent=tapLabel;
+  $('#g1StoryBtns').style.display=showButtons?'flex':'none';
+  g1StoryTapAction=onTap||null;
+  ov.style.display='flex';
+}
+$('#g1StoryOverlay').addEventListener('click',e=>{
+  if(e.target.closest('#g1StoryBtns'))return;
+  if(g1StoryTapAction){
+    const fn=g1StoryTapAction;
+    g1StoryTapAction=null;
+    fn();
+  }
+});
+function startGame1(){
+  showScreen('g1');
+  restartGame1();
+}
+function restartGame1(){
+  stopG1();
+  g1Phase='idle';g1Time=30;g1Counts=blankCounts();g1SlowCounts=blankCounts();g1FastCounts=blankCounts();
+  clearG1StoryTimers();
+  $('#g1Result').classList.remove('show');
+  hideG1Story();
+  $('#g1ClearOverlay').classList.remove('show');
+  $('#g1Transition').classList.remove('show');
+  $('#g1Opening').classList.remove('show');
+  $('#g1DecisionBtns').style.display='flex';
+  $('#g1ResultTitle').textContent='たくさん　あつまったかな？';
+  $('#g1ResultMessage').textContent='';
+  $('#fastNet').classList.remove('show');
+  $('#phaseText').textContent='あるいて　はこぶ';
+  $('#g1MapTitle').textContent='あるいて　1こずつ　はこぶ';
+  $('#g1Time').textContent='30';
+  renderG1Shelves();
+  $$('.region').forEach(r=>{r.disabled=true;r.dataset.lock='0';r.classList.remove('available','slowMoving','full');});
+  $('#g1Opening').classList.add('show');
+}
+function stopG1(){
+  g1Gen++;clearInterval(g1Tick);g1Tick=null;clearG1StoryTimers();hideG1Story();
+  $('#g1Opening').classList.remove('show');
+  $$('.transportToken,.splash,.loadingStage,.shelfFlyItem,.tokyoArrivalItem,.shelfTransferItem,.shopper').forEach(x=>x.remove());
+}
+function beginG1OpeningNext(){$('#g1Opening').classList.remove('show');$('#g1Intro').classList.add('show');}
+function beginG1Slow(){$('#g1Intro').classList.remove('show');g1Phase='slow';g1Counts=blankCounts();g1Gen++;renderG1Shelves();startG1Phase();}
+function beginG1Fast(){
+  $('#g1Transition').classList.remove('show');$('#fastNet').classList.add('show');
+  g1Phase='fast';g1Counts=blankCounts();g1Gen++;renderG1Shelves();startG1Phase();
+}
+function startG1Phase(){
+  g1Time=30;$('#g1Time').textContent=g1Time;const fast=g1Phase==='fast';
+  $('#phaseText').textContent=fast?'こうつうが　はったつ！':'あるいて　はこぶ';$('#g1MapTitle').textContent=fast?'はやく・たくさん　はこぶ':'あるいて　1こずつ　はこぶ';
+  if(fast){
+    const myGen=g1Gen;
+    $$('.region').forEach((r,i)=>{
+      r.classList.remove('available','slowMoving','full','loading');
+      r.disabled=true;r.dataset.lock='1';
+      const info=G1_REGIONS[r.dataset.id];
+      setTimeout(()=>runFastLoading(r,info,myGen),i*70);
+    });
+  }else{
+    $$('.region').forEach(r=>{r.classList.add('available');r.disabled=false;r.classList.remove('slowMoving','full','loading');r.dataset.lock='0';});
+  }
+  clearInterval(g1Tick);g1Tick=setInterval(()=>{g1Time--;$('#g1Time').textContent=g1Time;if(g1Time<=0)endG1Phase();},1000);
+}
+function endG1Phase(){
+  clearInterval(g1Tick);g1Tick=null;
+  const ended=g1Phase;g1Gen++;
+  $$('.transportToken,.splash,.loadingStage,.shelfFlyItem,.tokyoArrivalItem,.shelfTransferItem').forEach(x=>x.remove());
+  $$('.region').forEach(r=>{r.classList.remove('available','slowMoving','loading');r.disabled=true;r.dataset.lock='0';});
+
+  if(ended==='slow'){
+    g1SlowCounts={...g1Counts};
+    g1Phase='slowResult';
+    showSlowResult();
+  }else if(ended==='fast'){
+    g1FastCounts={...g1Counts};
+    runFastSale();
+  }
+}
+function makeTransportToken(fast,info,vehicle){
+  const t=document.createElement('div');t.className='transportToken'+(fast?' fast':'');
+  const fallback=(info.vehicles&&info.vehicles[0])||'🚚';
+  t.innerHTML=fast?`<span class="carrier">${vehicle||fallback}</span><span class="cargo">${info.emoji}${info.emoji}${info.emoji}</span>`:`<span class="carrier">🚶</span><span class="cargo">${info.emoji}</span>`;
+  return t;
+}
+function dropToShelf(id,amount){
+  g1Counts[id]=(g1Counts[id]||0)+amount;
+  renderG1Shelves();
+  const stand=document.querySelector(`#shelf .produceStand[data-product="${id}"]`);
+  if(stand){stand.classList.add('bump');setTimeout(()=>stand.classList.remove('bump'),240);}
+}
+function runFastLoading(btn,info,myGen){
+  if(myGen!==g1Gen||g1Phase!=='fast')return;
+  const map=$('#mapPane'),mr=map.getBoundingClientRect(),br=btn.getBoundingClientRect();
+  btn.disabled=true;btn.dataset.lock='1';btn.classList.remove('available');btn.classList.add('loading');
+  const stage=document.createElement('div');
+  stage.className='loadingStage';
+  stage.style.left=(br.left-mr.left+br.width/2)+'px';
+  stage.style.top=(br.top-mr.top+br.height/2+10)+'px';
+  const pool=info.vehicles||['🚚','🚄'];
+  const vehicle=pool[Math.floor(Math.random()*pool.length)];
+  btn.dataset.vehicle=vehicle;
+  stage.innerHTML=`<div class="loadingVehicle">${vehicle}</div>
+    <div class="loadingCargo">${info.emoji}${info.emoji}${info.emoji}</div>
+    <div class="loadingItem i1">${info.emoji}</div>
+    <div class="loadingItem i2">${info.emoji}</div>
+    <div class="loadingItem i3">${info.emoji}</div>`;
+  map.appendChild(stage);
+  setTimeout(()=>{
+    stage.remove();
+    if(myGen!==g1Gen||g1Phase!=='fast')return;
+    btn.classList.remove('loading');btn.classList.add('available');
+    btn.dataset.lock='0';btn.disabled=false;
+  },620);
+}
+
+function unlockRegion(btn,fast,myGen,delay=0){
+  setTimeout(()=>{
+    if(myGen!==g1Gen||!(g1Phase==='slow'||g1Phase==='fast'))return;
+    btn.dataset.lock='0';btn.disabled=false;btn.classList.remove('slowMoving');btn.classList.add('available');
+  },delay);
+}
+function slowSeaFail(btn,info,token,sx,sy,myGen){
+  const map=$('#mapPane');
+  const dx=info.failDx||0,dy=info.failDy||0;
+  const anim=token.animate([
+    {transform:'translate(0,0)',opacity:1},
+    {transform:`translate(${dx*.72}px,${dy*.72}px)`,opacity:1,offset:.62},
+    {transform:`translate(${dx}px,${dy+14}px) scale(.82)`,opacity:0}
+  ],{duration:1450,easing:'linear',fill:'forwards'});
+  anim.onfinish=()=>{
+    if(myGen!==g1Gen){token.remove();return;}
+    const splash=document.createElement('div');
+    splash.className='splash';
+    splash.innerHTML='<span class="drop d1">💦</span><span class="drop d2">💧</span><span class="drop d3">💧</span><span class="drop d4">💦</span>';
+    splash.style.left=(sx+dx)+'px';splash.style.top=(sy+dy)+'px';map.appendChild(splash);
+    token.remove();setTimeout(()=>splash.remove(),820);
+    unlockRegion(btn,false,myGen,520);
+  };
+}
+function regionTap(btn){
+  if(!(g1Phase==='slow'||g1Phase==='fast'))return;const id=btn.dataset.id,info=G1_REGIONS[id],fast=g1Phase==='fast',myGen=g1Gen;
+  if(btn.dataset.lock==='1')return;
+  btn.dataset.lock='1';
+  btn.classList.remove('available');btn.disabled=true;
+  if(!fast)btn.classList.add('slowMoving');
+  const map=$('#mapPane'),mr=map.getBoundingClientRect(),br=btn.getBoundingClientRect(),tr=$('#tokyoTarget').getBoundingClientRect();
+  const token=makeTransportToken(fast,info,btn.dataset.vehicle);const sx=br.left-mr.left+br.width/2-26,sy=br.top-mr.top+br.height/2-18;token.style.left=sx+'px';token.style.top=sy+'px';map.appendChild(token);
+  if(!fast&&info.seaFail){slowSeaFail(btn,info,token,sx,sy,myGen);return;}
+  const dx=(tr.left+tr.width/2)-(br.left+br.width/2),dy=(tr.top+tr.height/2)-(br.top+br.height/2),duration=fast?info.fast:info.slow;
+  const anim=token.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${dx}px,${dy}px) scale(${fast?.84:.95})`}],{duration,easing:fast?'cubic-bezier(.12,.8,.18,1)':'linear',fill:'forwards'});
+  anim.onfinish=()=>{
+    token.remove();
+    if(myGen!==g1Gen||!(g1Phase==='slow'||g1Phase==='fast'))return;
+    const amount=fast?FAST_LOAD:1;
+    if(fast)runFastLoading(btn,info,myGen);
+    animateGoodsToShelf(id,amount,myGen,()=>{
+      if(myGen!==g1Gen||!(g1Phase==='slow'||g1Phase==='fast'))return;
+      if(!fast)unlockRegion(btn,false,myGen,650);
+    });
+  };
+}
+$$('.region').forEach(r=>r.addEventListener('click',()=>regionTap(r)));
+
+/* ---------------- GAME 2 ---------------- */
+const BUILD_INFO={
+  house:{need:5,icon:'🏠',name:'いえ',w:1,h:1},
+  shopA:{need:10,icon:'🏪',name:'みせA',w:1,h:1},
+  shopB:{need:20,icon:'🏬',name:'みせB',w:2,h:1},
+  school:{need:30,icon:'🏫',name:'がっこう',w:2,h:2},
+  hospital:{need:40,icon:'🏥',name:'びょういん',w:2,h:2}
+};
+const TOWN_STAGE2=30,TOWN_STAGE3=80,TOWN_CLEAR=130;
+let townPop=0,stationCount=0,stationGaugeVal=0,postThird=0;
+let gauges={},ready={},selectedBuild=null,townTimer=null,townRunning=false,townPaused=false,townGen=0,stationPlaceMode=true,dragState=null;
+let ambientTimer=null,rainTimer=null,ambientActive=false,townViewMode=false,stationFocusLock=false;
+let townTimeTimer=null,townTimePhase=0;
+const stationXs=[24,50,76];
+const GRID_X=[4.545,13.636,22.727,31.818,40.909,50,59.091,68.182,77.273,86.364,95.455];
+const GRID_Y=[8,19.5,32,66,78.5,91];
+const CELL_W=9.10,CELL_H=11.50;
+let occupied=new Set();
+function cellKey(c,r){return c+','+r;}
+function footprintCells(c,r,type){
+  const info=BUILD_INFO[type],cells=[];
+  for(let dy=0;dy<info.h;dy++)for(let dx=0;dx<info.w;dx++)cells.push([c+dx,r+dy]);
+  return cells;
+}
+function validFootprint(c,r,type){
+  const info=BUILD_INFO[type];
+  if(c<0||r<0||c+info.w>GRID_X.length||r+info.h>GRID_Y.length)return false;
+  if(info.h===2 && r===2)return false; // 線路をまたがない
+  return footprintCells(c,r,type).every(([cc,rr])=>!occupied.has(cellKey(cc,rr)));
+}
+function footprintRect(c,r,type){
+  const info=BUILD_INFO[type];
+  const left=GRID_X[c]-CELL_W/2, right=GRID_X[c+info.w-1]+CELL_W/2;
+  const top=GRID_Y[r]-CELL_H/2, bottom=GRID_Y[r+info.h-1]+CELL_H/2;
+  return {left,top,width:right-left,height:bottom-top};
+}
+function createLots(){
+  const board=$('#townBoard');
+  board.querySelectorAll('.lot,.stationBuilding,.train,.peopleBurst,.townDeco,.building,.placementOption').forEach(x=>x.remove());
+  occupied=new Set();
+  GRID_Y.forEach((y,r)=>GRID_X.forEach((x,c)=>{
+    const lot=document.createElement('div');lot.className='lot';lot.dataset.col=c;lot.dataset.row=r;
+    lot.style.left=x+'%';lot.style.top=y+'%';board.appendChild(lot);
+  }));
+  // 最初からある小さな住宅は駅予定地から離して置く
+  [[0,0],[10,0],[0,5]].forEach(([c,r])=>placeBuildingAt(c,r,'house',true));
+  addTownDecor();
+}
+function addTownDecor(){
+  const board=$('#townBoard');
+  [[9,39,'🌳'],[13,60,'🌲'],[89,38,'🌳'],[92,61,'🌲'],[5,83,'🌳'],[96,15,'🌳']].forEach(([x,y,e])=>{
+    const d=document.createElement('div');d.className='townDeco';d.textContent=e;
+    Object.assign(d.style,{position:'absolute',left:x+'%',top:y+'%',fontSize:'28px',zIndex:'2',transform:'translate(-50%,-50%)',pointerEvents:'none'});
+    board.appendChild(d);
+  });
+}
+function startGame2(){showScreen('g2');restartGame2();}
+function restartGame2(){
+  stopTown();townTimePhase=0;townPop=0;stationCount=0;stationGaugeVal=0;postThird=0;selectedBuild=null;townRunning=false;townPaused=false;stationPlaceMode=true;dragState=null;
+  gauges={house:0,shopA:0,shopB:0,school:0,hospital:0};ready={house:false,shopA:false,shopB:false,school:false,hospital:false};
+  $('#g2').classList.remove('viewMode');townViewMode=false;
+  $('#townResult').classList.remove('show');$('#stationUnlockOverlay').classList.remove('show');$('#townIntroOverlay').classList.add('show');$('#popCount').textContent='0';$('#townStars').textContent='☆☆☆';
+  createLots();updateTownTimeOfDay();refreshLotHints();$$('.stationSlot').forEach(s=>{s.style.display='none';s.classList.remove('glow');});
+  const first=document.querySelector('.stationSlot[data-station="1"]');first.style.display='flex';first.classList.add('glow');
+  $$('.buildCard').forEach(c=>c.classList.remove('selected','ready'));$('#stationCard').classList.add('ready');$('#stationReadyText').textContent='まんなかへ　ドラッグ！';updateTownUI();
+}
+function beginTownIntro(){$('#townIntroOverlay').classList.remove('show');startTownTimeCycle();}
+function stopTown(){townGen++;clearTimeout(townTimer);townTimer=null;townRunning=false;stopAmbient();stopTownTimeCycle();townViewMode=false;stationFocusLock=false;const g2=$('#g2');if(g2)g2.classList.remove('viewMode');}
+function applyTownTime(){
+  const board=$('#townBoard');
+  if(!board)return;
+  board.classList.remove('time-morning','time-day','time-night');
+  board.classList.add(['time-morning','time-day','time-night'][townTimePhase]);
+}
+function updateTownTimeOfDay(){
+  applyTownTime();
+}
+function startTownTimeCycle(){
+  clearInterval(townTimeTimer);
+  townTimePhase=0;
+  applyTownTime();
+  townTimeTimer=setInterval(()=>{
+    townTimePhase=(townTimePhase+1)%3;
+    applyTownTime();
+  },15000);
+}
+function stopTownTimeCycle(){
+  clearInterval(townTimeTimer);
+  townTimeTimer=null;
+}
+function ambientLevel(){
+  if(townPop>=TOWN_STAGE3)return 3;
+  if(townPop>=TOWN_STAGE2)return 2;
+  return 1;
+}
+function spawnWalker(){
+  if(!ambientActive)return;
+  const board=$('#townBoard');
+  if(board.querySelectorAll('.ambientPerson').length>14)return;
+
+  const p=document.createElement('div');
+  p.className='ambientPerson';
+  p.textContent=Math.random()<.5?'🚶':'🚶‍♀️';
+
+  const y=[14,20,34,63,80,88][Math.floor(Math.random()*6)];
+  const fromLeft=Math.random()<.5;
+  p.style.top=y+'%';
+  p.style.left=(fromLeft?'-4%':'104%');
+  board.appendChild(p);
+
+  const level=ambientLevel();
+  const dur=[0,8200,7600,7000][level];
+  const dist=board.clientWidth*1.12;
+
+  const facing=fromLeft?' scaleX(-1)':'';
+  const startTransform=`translateX(0)${facing}`;
+  const endTransform=`translateX(${fromLeft?dist:-dist}px)${facing}`;
+
+  const anim=p.animate(
+    [{transform:startTransform},{transform:endTransform}],
+    {duration:dur+Math.random()*1500,easing:'linear'}
+  );
+  anim.onfinish=()=>p.remove();
+}
+function spawnCar(){
+  if(!ambientActive)return;
+  const board=$('#townBoard');
+  if(board.querySelectorAll('.ambientCar').length>10)return;
+
+  const c=document.createElement('div');
+  c.className='ambientCar';
+  c.textContent=['🚗','🚕','🚙'][Math.floor(Math.random()*3)];
+
+  const y=Math.random()<.5?23.5:71.5;
+  const fromLeft=Math.random()<.5;
+  c.style.top=y+'%';
+  c.style.left=(fromLeft?'-5%':'105%');
+  board.appendChild(c);
+
+  const level=ambientLevel();
+  const dur=[0,6200,5600,5000][level];
+  const dist=board.clientWidth*1.14;
+
+  const facing=fromLeft?' scaleX(-1)':'';
+  const startTransform=`translateX(0)${facing}`;
+  const endTransform=`translateX(${fromLeft?dist:-dist}px)${facing}`;
+
+  const anim=c.animate(
+    [{transform:startTransform},{transform:endTransform}],
+    {duration:dur+Math.random()*900,easing:'linear'}
+  );
+  anim.onfinish=()=>c.remove();
+}
+function startRain(){
+  if(!ambientActive||document.querySelector('.rainCurtain'))return;
+  const board=$('#townBoard'),r=document.createElement('div');r.className='rainCurtain';
+  for(let i=0;i<42;i++){const d=document.createElement('i');d.className='rainDrop';d.style.left=(Math.random()*100)+'%';d.style.animationDelay=(-Math.random()*.75)+'s';d.style.animationDuration=(.55+Math.random()*.35)+'s';r.appendChild(d);}
+  board.appendChild(r);setTimeout(()=>r.remove(),3500);
+}
+function scheduleRain(){clearTimeout(rainTimer);if(!ambientActive)return;rainTimer=setTimeout(()=>{startRain();scheduleRain();},9000+Math.random()*9000);}
+function startAmbient(){
+  if(ambientActive)return;ambientActive=true;
+  ambientTimer=setInterval(()=>{const level=ambientLevel();if(Math.random()<(level===1?.25:level===2?.55:.90))spawnWalker();if(Math.random()<(level===1?.15:level===2?.40:.70))spawnCar();},900);
+  scheduleRain();
+}
+function stopAmbient(){ambientActive=false;clearInterval(ambientTimer);ambientTimer=null;clearTimeout(rainTimer);rainTimer=null;$$('.ambientPerson,.ambientCar,.rainCurtain').forEach(x=>x.remove());}
+
+function updateStationSlots(){
+  $$('.stationSlot').forEach((s,i)=>{const built=document.querySelector(`.stationBuilding[data-station="${i}"]`);if(built){s.style.display='none';s.classList.remove('glow');return;}s.style.display='none';s.classList.remove('glow');
+    if(stationPlaceMode){if(stationCount===0&&i===1){s.style.display='flex';s.classList.add('glow');}else if(stationCount===1&&(i===0||i===2)){s.style.display='flex';s.classList.add('glow');}else if(stationCount===2){s.style.display='flex';s.classList.add('glow');}}
+  });
+}
+function refreshLotHints(){
+  $$('.lot').forEach(l=>l.classList.remove('availableHint'));
+
+  // ドラッグ可能になっている建物のどれかを置けるマスだけ示す。
+  const readyTypes=Object.keys(BUILD_INFO).filter(type=>ready[type]);
+  if(!readyTypes.length)return;
+
+  const cells=new Set();
+  readyTypes.forEach(type=>{
+    for(let r=0;r<GRID_Y.length;r++){
+      for(let c=0;c<GRID_X.length;c++){
+        if(!validTownPlacement(c,r,type))continue;
+        footprintCells(c,r,type).forEach(([cc,rr])=>cells.add(cellKey(cc,rr)));
+      }
+    }
+  });
+
+  cells.forEach(key=>{
+    const [c,r]=key.split(',').map(Number);
+    const lot=document.querySelector(`.lot[data-col="${c}"][data-row="${r}"]`);
+    if(lot && !lot.classList.contains('occupied'))lot.classList.add('availableHint');
+  });
+}
+function hasValidTownPlacement(type){
+  for(let r=0;r<GRID_Y.length;r++){
+    for(let c=0;c<GRID_X.length;c++){
+      if(validTownPlacement(c,r,type))return true;
+    }
+  }
+  return false;
+}
+function unlockStationNowBecauseTownIsFull(){
+  if(stationCount>=3 || stationPlaceMode)return false;
+  stationPlaceMode=true;stationGaugeVal=1;selectedBuild=null;
+  $('#stationUnlockOverlay').classList.add('show');updateTownUI();return true;
+}
+function checkHouseSpaceAndUnlockStation(){
+  if(hasValidTownPlacement('house'))return false;
+
+  // 今の駅の周りに家を置けないなら、人口条件を待たず次の駅を解放。
+  if(unlockStationNowBecauseTownIsFull())return true;
+
+  // 3駅とも設置済みで家も置けないなら、建てられる場所を使い切った扱い。
+  if(stationCount>=3){
+    
+    finishTown();
+    return true;
+  }
+  return false;
+}
+
+function updateTownUI(){
+  $('#popCount').textContent=townPop;
+  updateTownTimeOfDay();
+  const stars=townPop>=TOWN_CLEAR?'★★★':stationCount>=2?'★★☆':stationCount>=1?'★☆☆':'☆☆☆';
+  $('#townStars').textContent=stars;
+  Object.keys(BUILD_INFO).forEach(k=>{
+    const need=BUILD_INFO[k].need,pct=Math.min(100,gauges[k]/need*100);$('#gauge-'+k).style.width=pct+'%';
+    const card=document.querySelector(`.buildCard[data-build="${k}"]`);
+    if(ready[k]){card.classList.add('ready');$('#ready-'+k).textContent='たてられる！';}
+    else{card.classList.remove('ready','selected');$('#ready-'+k).textContent='';}
+    card.classList.toggle('dimmed', stationFocusLock);
+  });
+  const sc=$('#stationCard');let pct=0,txt='';
+  if(stationPlaceMode){pct=100;sc.classList.add('ready');txt=stationCount===0?'まんなかへ　ドラッグ！':'おけるよ！';}
+  else if(stationCount===1){pct=Math.max(0,Math.min(100,townPop/TOWN_STAGE2*100));sc.classList.remove('ready','selected');txt='あと '+Math.max(0,TOWN_STAGE2-townPop)+'にん';}
+  else if(stationCount===2){pct=Math.max(0,Math.min(100,(townPop-TOWN_STAGE2)/(TOWN_STAGE3-TOWN_STAGE2)*100));sc.classList.remove('ready','selected');txt='あと '+Math.max(0,TOWN_STAGE3-townPop)+'にん';}
+  else{pct=100;sc.classList.remove('ready','selected');txt='えきは 3つ！';}
+  sc.classList.toggle('stationFocus',stationFocusLock);
+  sc.classList.remove('dimmed');
+  $('#stationGauge').style.width=pct+'%';$('#stationReadyText').textContent=txt;
+  updateStationSlots();refreshLotHints();
+}
+function canDragBuild(type){
+  if(stationFocusLock && type!=='station')return false;
+  return type==='station' ? stationPlaceMode : !!ready[type];
+}
+function clearDragVisuals(){
+  $$('.placementOption.dragTarget').forEach(x=>x.remove());
+  $$('.stationSlot').forEach(s=>s.classList.remove('dropGlow'));
+  const g=document.querySelector('.dragGhost');if(g)g.remove();
+}
+function makeDragGhost(type){
+  const g=document.createElement('div');
+  if(type==='station'){
+    g.className='dragGhost station';
+    g.innerHTML=`<img class="stationScene" src="${ASSET_SRC.station}" alt="station">`;
+  }else{
+    g.className='dragGhost building '+type;
+    g.innerHTML=buildingMarkup(type);
+    const info=BUILD_INFO[type];
+    g.style.width=(info.w===2?'168px':'104px');
+    g.style.height=(info.h===2?'134px':'86px');
+  }
+  document.body.appendChild(g);return g;
+}
+function eligibleStationIndices(){
+  const out=[];
+  if(!stationPlaceMode)return out;
+  [0,1,2].forEach(i=>{
+    if(document.querySelector(`.stationBuilding[data-station="${i}"]`))return;
+    if(stationCount===0&&i!==1)return;
+    if(stationCount===1&&i===1)return;
+    out.push(i);
+  });
+  return out;
+}
+function pointerInsideBoard(x,y){
+  const r=$('#townBoard').getBoundingClientRect();
+  return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;
+}
+function placementAllowedByStation(c,r,type){
+  const stations=[...document.querySelectorAll('.stationBuilding')].map(s=>stationXs[+s.dataset.station]);
+  if(!stations.length)return true;
+
+  // 建物の中心だけでなく、使うすべてのマスが駅の発展範囲内にあることを条件にする。
+  // これにより、最初の駅だけの段階で「大きな店だけ置ける半端な端マス」は表示されない。
+  const influence=29.5;
+  return footprintCells(c,r,type).every(([cc,rr])=>{
+    const x=GRID_X[cc];
+    return stations.some(sx=>Math.abs(x-sx)<=influence);
+  });
+}
+function validTownPlacement(c,r,type){
+  return validFootprint(c,r,type) && placementAllowedByStation(c,r,type);
+}
+function buildingCandidateUnderPointer(type,clientX,clientY){
+  const board=$('#townBoard'),br=board.getBoundingClientRect();
+  if(!pointerInsideBoard(clientX,clientY))return null;
+
+  const px=(clientX-br.left)/br.width*100;
+  const py=(clientY-br.top)/br.height*100;
+  let best=null,bestScore=Infinity;
+
+  for(let r=0;r<GRID_Y.length;r++){
+    for(let c=0;c<GRID_X.length;c++){
+      if(!validTownPlacement(c,r,type))continue;
+      const rect=footprintRect(c,r,type);
+
+      // 指がその建物の配置範囲に実際に入っている場合だけ候補にする。
+      if(px<rect.left || px>rect.left+rect.width || py<rect.top || py>rect.top+rect.height)continue;
+
+      const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+      const score=(cx-px)*(cx-px)+(cy-py)*(cy-py);
+      if(score<bestScore){bestScore=score;best={c,r,rect};}
+    }
+  }
+  return best;
+}
+function showBuildingDropTarget(cand){
+  $$('.placementOption.dragTarget').forEach(x=>x.remove());
+  if(!cand)return;
+  const o=document.createElement('div');o.className='placementOption dragTarget';
+  Object.assign(o.style,{left:cand.rect.left+'%',top:cand.rect.top+'%',width:cand.rect.width+'%',height:cand.rect.height+'%'});
+  $('#townBoard').appendChild(o);
+}
+function updateDragTarget(clientX,clientY){
+  if(!dragState)return;
+  dragState.ghost.style.left=clientX+'px';dragState.ghost.style.top=clientY+'px';
+  if(dragState.type==='station'){
+    $$('.stationSlot').forEach(s=>s.classList.remove('dropGlow'));
+    dragState.candidate=null;
+    if(!pointerInsideBoard(clientX,clientY))return;
+    const br=$('#townBoard').getBoundingClientRect(),px=(clientX-br.left)/br.width*100;
+    let best=null,bestDist=Infinity;
+    eligibleStationIndices().forEach(i=>{const d=Math.abs(stationXs[i]-px);if(d<bestDist){bestDist=d;best=i;}});
+    if(best!==null){dragState.candidate={station:best};document.querySelector(`.stationSlot[data-station="${best}"]`).classList.add('dropGlow');}
+  }else{
+    const cand=buildingCandidateUnderPointer(dragState.type,clientX,clientY);
+    dragState.candidate=cand;showBuildingDropTarget(cand);
+  }
+}
+function beginCardDrag(e,card){
+  const type=card.dataset.build;if(!canDragBuild(type))return;
+  e.preventDefault();
+  clearDragVisuals();
+  dragState={type,pointerId:e.pointerId,ghost:makeDragGhost(type),candidate:null};
+  card.classList.add('selected');
+  updateDragTarget(e.clientX,e.clientY);
+}
+function endCardDrag(e,cancel=false){
+  if(!dragState)return;
+  const {type,candidate}=dragState;
+  clearDragVisuals();$$('.buildCard').forEach(c=>c.classList.remove('selected'));
+  dragState=null;
+  if(cancel||!candidate)return;
+  if(type==='station'){
+    placeStation(candidate.station);return;
+  }
+  if(!ready[type]||!validFootprint(candidate.c,candidate.r,type))return;
+  placeBuildingAt(candidate.c,candidate.r,type,false);
+  ready[type]=false;gauges[type]=0;
+  if(type==='house'){townPaused=false;}
+  updateTownUI();
+  if(checkTownFilled())return;
+  checkHouseSpaceAndUnlockStation();
+}
+$$('.buildCard').forEach(card=>card.addEventListener('pointerdown',e=>beginCardDrag(e,card)));
+window.addEventListener('pointermove',e=>{if(dragState&&e.pointerId===dragState.pointerId){e.preventDefault();updateDragTarget(e.clientX,e.clientY);}}, {passive:false});
+window.addEventListener('pointerup',e=>{if(dragState&&e.pointerId===dragState.pointerId)endCardDrag(e,false);});
+window.addEventListener('pointercancel',e=>{if(dragState&&e.pointerId===dragState.pointerId)endCardDrag(e,true);});
+function placeStation(idx){
+  const board=$('#townBoard'),slot=document.querySelector(`.stationSlot[data-station="${idx}"]`),s=document.createElement('div');
+  s.className='stationBuilding';s.dataset.station=idx;s.style.left=stationXs[idx]+'%';
+  s.innerHTML=`<img class="stationScene" src="${ASSET_SRC.station}" alt="station">`;
+  board.appendChild(s);slot.style.display='none';slot.classList.remove('glow');
+  stationCount++;stationPlaceMode=false;stationFocusLock=false;selectedBuild=null;stationGaugeVal=0;$('#stationCard').classList.remove('selected','ready');
+  if(stationCount===1){townRunning=true;scheduleTrain(450);startAmbient();}
+  updateTownUI();checkHouseSpaceAndUnlockStation();checkTownFilled();
+}
+function scheduleTrain(delay){clearTimeout(townTimer);if(!townRunning)return;const myGen=townGen;townTimer=setTimeout(()=>{if(myGen!==townGen||!townRunning)return;runTrain();},delay);}
+function runTrain(){
+  if(stationCount===0||!townRunning)return;
+
+  const built=[...document.querySelectorAll('.stationBuilding')];
+  const s=built[Math.floor(Math.random()*built.length)];
+  const idx=+s.dataset.station;
+  const x=stationXs[idx];
+  const board=$('#townBoard');
+  const train=document.createElement('div');
+  train.className='train';
+  train.innerHTML='<img src="images/train.png" alt="でんしゃ">';
+  board.appendChild(train);
+
+  const boardW=board.clientWidth;
+  const trainW=train.getBoundingClientRect().width||480;
+  const startLeft=-520;
+  const stationCenter=boardW*x/100;
+  const arriveDx=stationCenter-trainW/2-startLeft;
+  const arrivalDur=stationCount===1?1150:stationCount===2?800:470;
+
+  const arrive=train.animate(
+    [
+      {transform:'translate3d(0,-50%,0)'},
+      {transform:`translate3d(${arriveDx}px,-50%,0)`}
+    ],
+    {duration:arrivalDur,easing:'ease-out',fill:'forwards'}
+  );
+
+  arrive.onfinish=()=>{
+    // 駅に停車したまま、人が降りる。
+    if(!townPaused){
+      showPeople(x);
+      const party=stationCount===1?2:stationCount===2?3:4;
+      addParty(party,0);
+    }
+
+    const stopMs=stationCount===3?600:850;
+    setTimeout(()=>{
+      if(!train.isConnected)return;
+      // 人が降り終わったら、そのまま前方（右）へ走り去る。
+      const departDx=boardW+trainW+300;
+      const departDur=stationCount===1?850:stationCount===2?650:450;
+      const depart=train.animate(
+        [
+          {transform:`translate3d(${arriveDx}px,-50%,0)`},
+          {transform:`translate3d(${departDx}px,-50%,0)`}
+        ],
+        {duration:departDur,easing:'ease-in',fill:'forwards'}
+      );
+      depart.onfinish=()=>{
+        train.remove();
+        const next=stationCount===1?2600:stationCount===2?1400:520;
+        scheduleTrain(next);
+      };
+    },stopMs);
+  };
+}
+function showPeople(x){
+  const p=document.createElement('div');p.className='peopleBurst';
+  p.style.left=x+'%';p.style.top='43%';
+  p.textContent=stationCount===1?'👤👤':stationCount===2?'👤👤👤':'👤👤👤👤';
+  $('#townBoard').appendChild(p);setTimeout(()=>p.remove(),1000);
+}
+function addParty(n,i){if(i>=n||!townRunning||townPaused)return;addPerson();if(townRunning&&!townPaused)setTimeout(()=>addParty(n,i+1),stationCount===3?65:120);}
+function addPerson(){
+  if(townPaused||!townRunning)return;townPop++;
+  Object.keys(BUILD_INFO).forEach(k=>{
+    if(!ready[k]){gauges[k]++;if(gauges[k]>=BUILD_INFO[k].need){gauges[k]=BUILD_INFO[k].need;ready[k]=true;if(k==='house')townPaused=true;}}
+  });
+  if(stationCount===1&&!stationPlaceMode&&townPop>=TOWN_STAGE2){stationPlaceMode=true;selectedBuild='station';$('#stationUnlockOverlay').classList.add('show');}
+  else if(stationCount===2&&!stationPlaceMode&&townPop>=TOWN_STAGE3){stationPlaceMode=true;selectedBuild='station';$('#stationUnlockOverlay').classList.add('show');}
+  else if(stationCount===3&&townPop>=TOWN_CLEAR){updateTownUI();finishTown();return;}
+  updateTownUI();checkHouseSpaceAndUnlockStation();
+}
+function closeStationUnlock(){$('#stationUnlockOverlay').classList.remove('show');selectedBuild='station';stationFocusLock=true;updateTownUI();}
+function clearPlacementOptions(){$$('.placementOption').forEach(x=>x.remove());}
+function buildingMarkup(type){
+  const labels={house:'いえ',shopA:'みせA',shopB:'みせB',school:'がっこう',hospital:'びょういん'};
+  return `<img class="assetImg" src="${ASSET_SRC[type]}" alt="${labels[type]}">`;
+}
+function placeBuildingAt(c,r,type,initial){
+  const board=$('#townBoard'),rect=footprintRect(c,r,type);
+  footprintCells(c,r,type).forEach(([cc,rr])=>{
+    occupied.add(cellKey(cc,rr));
+    const lot=board.querySelector(`.lot[data-col="${cc}"][data-row="${rr}"]`);
+    if(lot)lot.classList.add('occupied');
+  });
+  const b=document.createElement('div');b.className='building '+type+(initial?' initialHouse':'');
+  Object.assign(b.style,{
+    left:(rect.left+.45)+'%',top:(rect.top+.5)+'%',
+    width:Math.max(1,rect.width-.9)+'%',height:Math.max(1,rect.height-1)+'%'
+  });
+  b.innerHTML=buildingMarkup(type);board.appendChild(b);
+  if(!initial)setTimeout(()=>checkTownFilled(),0);
+}
+function townCellCount(){return GRID_X.length*GRID_Y.length;}
+function checkTownFilled(){
+  if(occupied.size>=townCellCount()){finishTown();return true;}
+  if(stationCount>=3&&!hasValidTownPlacement('house')){finishTown();return true;}
+  return false;
+}
+function finishTown(){
+  if($('#townResult').classList.contains('show'))return;
+  townRunning=false;clearTimeout(townTimer);clearDragVisuals();$('#townStars').textContent='★★★';
+  setTimeout(()=>$('#townResult').classList.add('show'),350);
+}
+function openTownView(e){
+  if(e)e.stopPropagation();townViewMode=true;$('#townResult').classList.remove('show');$('#g2').classList.add('viewMode');
+}
+$('#g2').addEventListener('pointerup',()=>{
+  if(!townViewMode)return;townViewMode=false;$('#g2').classList.remove('viewMode');$('#townResult').classList.add('show');
+});
+
+</script>
+</body>
+</html>
