@@ -508,6 +508,72 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 
 .townResult{position:absolute;inset:64px 0 0;background:#eaf8ffdd;backdrop-filter:blur(2px);z-index:80;display:none;align-items:center;justify-content:center;padding:22px}.townResult.show{display:flex}.townResultCard{width:min(850px,93vw);background:#fff;border-radius:30px;padding:24px;text-align:center;box-shadow:0 18px 50px #0004}.townResultCard h2{font-size:clamp(32px,4.5vw,52px);margin:0 0 10px}.beforeAfter{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:12px 0}.baBox{border-radius:20px;padding:14px;background:#f4f9ed;border:3px solid #b7d3a7}.baBox h3{font-size:25px;margin:0 0 8px}.miniTown{height:180px;border-radius:15px;background:linear-gradient(#dff8c8 0 78%,#aaa 78% 84%,#dff8c8 84%);position:relative;overflow:hidden}.miniHouse{position:absolute;font-size:36px}.nowTown{font-size:48px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:18px}.nowTown span{filter:drop-shadow(0 3px 3px #0002)}.resultMessage{font-size:clamp(22px,3vw,34px);font-weight:1000;line-height:1.45}
 
+
+/* v19: Safari/iPadでカードを画面内に固定するコンパクトレイアウト */
+.sidePanel{
+  height:100%;min-height:0;overflow:hidden;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  gap:6px;padding:7px;
+}
+.townStatus{min-height:0;padding:5px 7px;border-radius:12px;align-items:center}
+.stars{font-size:clamp(17px,1.8vw,22px);line-height:1}
+.pop{font-size:clamp(15px,1.6vw,20px);white-space:nowrap;line-height:1}
+.buildCardGrid{
+  min-height:0;display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+.buildCardGrid .buildCard{
+  min-width:0;min-height:0;height:100%;overflow:hidden;
+  padding:4px;border-width:2px;border-radius:12px;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) 9px 12px;
+  gap:2px;
+}
+.buildCardGrid .cardHead{
+  min-width:0;min-height:0;font-size:clamp(11px,1.05vw,14px);line-height:1.05;
+  gap:3px;white-space:nowrap;overflow:hidden;
+}
+.buildCardGrid .cardHead>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.buildCardGrid .cardIcon{font-size:clamp(16px,1.55vw,22px);flex:0 0 auto}
+.buildCardGrid .miniAsset,
+.buildCardGrid .stationCardPreview{
+  width:100%;height:100%;min-height:0;margin:0;
+  border-width:1px;border-radius:8px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.buildCardGrid .miniAsset img,
+.buildCardGrid .stationCardPreview img{
+  width:100%;height:100%;min-width:0;min-height:0;
+  object-fit:contain;display:block;padding:0;
+}
+.buildCardGrid .gauge{
+  height:9px;min-height:9px;margin:0;border-radius:7px;
+}
+.buildCardGrid .readyText{
+  min-height:12px;height:12px;font-size:clamp(8px,.75vw,10px);
+  line-height:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-align:center;
+}
+.sideHint{
+  margin:0;font-size:clamp(9px,.8vw,11px);line-height:1.1;
+  min-height:20px;
+}
+@media (max-height:760px){
+  .sidePanel{gap:4px;padding:5px}
+  .buildCardGrid{gap:4px}
+  .buildCardGrid .buildCard{padding:3px;border-radius:10px;grid-template-rows:auto minmax(0,1fr) 8px 10px;gap:1px}
+  .buildCardGrid .gauge{height:8px;min-height:8px}
+  .buildCardGrid .readyText{height:10px;min-height:10px;line-height:10px;font-size:8px}
+  .sideHint{display:none}
+}
+@media (max-height:650px){
+  .townStatus{padding:3px 5px}
+  .buildCardGrid .cardHead{font-size:10px}
+  .buildCardGrid .cardIcon{font-size:15px}
+}
+
 @media (orientation:portrait){
   .menuCards{grid-template-columns:1fr;gap:16px}
   .menuCard{min-height:220px}
@@ -659,16 +725,18 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 
     <aside class="sidePanel">
       <div class="townStatus"><div class="stars" id="townStars">☆☆☆</div><div class="pop">👥 <span id="popCount">0</span>にん</div></div>
-      <button class="buildCard stationCard ready" id="stationCard" data-build="station">
-        <div class="cardHead"><span>🚉 えき</span><span class="cardIcon">🚉</span></div>
-        <div class="stationCardPreview"><img src="images/station.png" alt="station"></div>
-        <div class="gauge"><div class="gaugeFill" id="stationGauge"></div></div><div class="readyText" id="stationReadyText">まんなかへ　ドラッグ！</div>
-      </button>
-      <button class="buildCard" data-build="house"><div class="cardHead"><span>🏠 いえ</span><span>5にん</span></div><div class="miniAsset"><img src="images/house.png" alt="house"></div><div class="gauge"><div class="gaugeFill" id="gauge-house"></div></div><div class="readyText" id="ready-house"></div></button>
-      <button class="buildCard" data-build="shopA"><div class="cardHead"><span>🏪 みせA</span><span>10にん</span></div><div class="miniAsset"><img src="images/shop_a.png" alt="shopA"></div><div class="gauge"><div class="gaugeFill" id="gauge-shopA"></div></div><div class="readyText" id="ready-shopA"></div></button>
-      <button class="buildCard" data-build="shopB"><div class="cardHead"><span>🏬 みせB</span><span>20にん</span></div><div class="miniAsset"><img src="images/shop_b.png" alt="shopB"></div><div class="gauge"><div class="gaugeFill" id="gauge-shopB"></div></div><div class="readyText" id="ready-shopB"></div></button>
-      <button class="buildCard" data-build="school"><div class="cardHead"><span>🏫 がっこう</span><span>30にん</span></div><div class="miniAsset"><img src="images/school.png" alt="school"></div><div class="gauge"><div class="gaugeFill" id="gauge-school"></div></div><div class="readyText" id="ready-school"></div></button>
-      <button class="buildCard" data-build="hospital"><div class="cardHead"><span>🏥 びょういん</span><span>40にん</span></div><div class="miniAsset"><img src="images/hospital.png" alt="hospital"></div><div class="gauge"><div class="gaugeFill" id="gauge-hospital"></div></div><div class="readyText" id="ready-hospital"></div></button>
+      <div class="buildCardGrid">
+        <button class="buildCard stationCard ready" id="stationCard" data-build="station">
+          <div class="cardHead"><span>🚉 えき</span><span class="cardIcon">🚉</span></div>
+          <div class="stationCardPreview"><img src="images/station.png" alt="station"></div>
+          <div class="gauge"><div class="gaugeFill" id="stationGauge"></div></div><div class="readyText" id="stationReadyText">まんなかへ　ドラッグ！</div>
+        </button>
+        <button class="buildCard" data-build="house"><div class="cardHead"><span>🏠 いえ</span><span>5にん</span></div><div class="miniAsset"><img src="images/house.png" alt="house"></div><div class="gauge"><div class="gaugeFill" id="gauge-house"></div></div><div class="readyText" id="ready-house"></div></button>
+        <button class="buildCard" data-build="shopA"><div class="cardHead"><span>🏪 みせA</span><span>10にん</span></div><div class="miniAsset"><img src="images/shop_a.png" alt="shopA"></div><div class="gauge"><div class="gaugeFill" id="gauge-shopA"></div></div><div class="readyText" id="ready-shopA"></div></button>
+        <button class="buildCard" data-build="shopB"><div class="cardHead"><span>🏬 みせB</span><span>20にん</span></div><div class="miniAsset"><img src="images/shop_b.png" alt="shopB"></div><div class="gauge"><div class="gaugeFill" id="gauge-shopB"></div></div><div class="readyText" id="ready-shopB"></div></button>
+        <button class="buildCard" data-build="school"><div class="cardHead"><span>🏫 がっこう</span><span>30にん</span></div><div class="miniAsset"><img src="images/school.png" alt="school"></div><div class="gauge"><div class="gaugeFill" id="gauge-school"></div></div><div class="readyText" id="ready-school"></div></button>
+        <button class="buildCard" data-build="hospital"><div class="cardHead"><span>🏥 びょういん</span><span>40にん</span></div><div class="miniAsset"><img src="images/hospital.png" alt="hospital"></div><div class="gauge"><div class="gaugeFill" id="gauge-hospital"></div></div><div class="readyText" id="ready-hospital"></div></button>
+      </div>
       <div class="sideHint">ひかった　カードを　ドラッグして<br>おきたい　ばしょで　はなそう</div>
     </aside>
   </div>
